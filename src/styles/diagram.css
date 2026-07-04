@@ -1,0 +1,121 @@
+.ek-diagram-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+}
+
+.ek-diagram-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--ek-border);
+}
+
+.ek-diagram-shape-btn,
+.ek-diagram-mode-btn {
+  background: var(--ek-panel-bg);
+  border: 1px solid transparent;
+  border-radius: var(--ek-radius);
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ek-text-secondary);
+}
+
+.ek-diagram-shape-btn:hover,
+.ek-diagram-mode-btn:hover {
+  background: var(--ek-hover-tint);
+  color: var(--ek-text);
+}
+
+.ek-diagram-shape-btn.active,
+.ek-diagram-mode-btn.active {
+  background: var(--ek-blue);
+  color: #fff;
+}
+
+.ek-diagram-curve-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--ek-text-secondary);
+  margin: 0 4px;
+}
+
+.ek-diagram-delete-btn {
+  margin-left: auto;
+}
+
+.ek-diagram-canvas-wrap {
+  position: relative;
+  flex: 1;
+  overflow: auto;
+  background-color: var(--ek-canvas-bg);
+  background-image: radial-gradient(circle, var(--ek-canvas-dot) 1px, transparent 1px);
+  background-size: 18px 18px;
+  border: 1px solid var(--ek-border);
+  border-radius: var(--ek-radius);
+}
+
+.ek-diagram-canvas {
+  display: block;
+}
+
+.ek-diagram-shape {
+  cursor: pointer;
+}
+
+.ek-diagram-shape-outline {
+  fill: var(--ek-panel-bg);
+  stroke: var(--ek-border-black);
+  stroke-width: 1.5;
+}
+
+.ek-diagram-shape.selected .ek-diagram-shape-outline {
+  stroke: var(--ek-blue);
+  stroke-width: 2.5;
+}
+
+.ek-diagram-shape.connect-source .ek-diagram-shape-outline {
+  stroke: var(--ek-good-fg);
+  stroke-width: 2.5;
+}
+
+.ek-diagram-shape-label {
+  font-size: 12px;
+  fill: var(--ek-text);
+}
+
+.ek-diagram-connector-line {
+  stroke: var(--ek-text-secondary);
+  stroke-width: 1.5;
+  cursor: pointer;
+}
+
+.ek-diagram-connector.selected .ek-diagram-connector-line {
+  stroke: var(--ek-blue);
+  stroke-width: 2.5;
+}
+
+.ek-diagram-connector-label {
+  font-size: 11px;
+  fill: var(--ek-text);
+}
+
+.ek-diagram-arrowhead {
+  fill: var(--ek-text-secondary);
+}
+
+.ek-diagram-inline-editor {
+  position: absolute;
+  border: 2px solid var(--ek-blue);
+  border-radius: 3px;
+  padding: 2px 4px;
+  font-size: 12px;
+  background: var(--ek-input-bg-focus);
+  color: var(--ek-text);
+}

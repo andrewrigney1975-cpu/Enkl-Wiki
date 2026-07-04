@@ -1,0 +1,116 @@
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--ek-font);
+  color: var(--ek-text);
+  background: var(--ek-bg);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+input, textarea, select {
+  font-family: inherit;
+  font-size: 14px;
+}
+
+a {
+  color: var(--ek-blue);
+}
+
+.ek-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ek-icon svg {
+  display: block;
+}
+
+.ek-btn {
+  border-radius: var(--ek-radius);
+  padding: 7px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.ek-btn-primary {
+  background: var(--ek-blue);
+  color: #fff;
+}
+
+.ek-btn-primary:hover {
+  background: var(--ek-blue-dark);
+}
+
+.ek-btn-secondary {
+  background: var(--ek-surface);
+  border-color: var(--ek-border-strong);
+  color: var(--ek-text);
+}
+
+.ek-btn-secondary:hover {
+  background: var(--ek-panel-bg);
+}
+
+.ek-btn-danger {
+  background: var(--ek-surface);
+  border-color: var(--ek-danger);
+  color: var(--ek-danger);
+}
+
+.ek-btn-danger:hover {
+  background: var(--ek-danger-hover-bg);
+}
+
+.ek-btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--ek-text-secondary);
+  padding: 6px;
+}
+
+.ek-btn-ghost:hover {
+  background: var(--ek-panel-bg);
+}
+
+.ek-btn:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+.ek-hidden {
+  display: none !important;
+}
+
+::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--ek-scrollbar-thumb);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
