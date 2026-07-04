@@ -4,6 +4,7 @@
 - 100% client-side Content Management System that runs offline and stores pages as Markdown in JSON
 - Designed to run from file:// protocol
 - Designed to run from a thumb drive
+- Designed to be served from https:// web server
 - Content pages and the site's JSON config file can be published to a web server via FTP - this operation is outside the scope of this plan
 - Page hierarchy is persisted in localStorage and can be exported and imported as a JSON file
 - Single file that combines app style, HTML and JavaScript
@@ -25,6 +26,7 @@
 - A Site has a description (markdown)
 
 ## Implementation
+- Configuration variable that is used to choose or in-memory page content stored in the apps's JSON config file or filesystem-based page content
 - A WYSIWYG Markdown editor component will need to be created
 - This Markdown editor will save pages to the file system
 - This Markdown component will give editors the option to see and modify the underlying raw Markdown
