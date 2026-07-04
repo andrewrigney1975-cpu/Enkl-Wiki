@@ -26,7 +26,7 @@
 - A Site has a description (markdown)
 
 ## Implementation
-- Configuration variable that is used to choose or in-memory page content stored in the apps's JSON config file or filesystem-based page content
+- Configuration variable that is used to choose between an in-memory page content, stored in the apps's JSON config structure or filesystem-based page content
 - A WYSIWYG Markdown editor component will need to be created
 - This Markdown editor will save pages to the file system
 - This Markdown component will give editors the option to see and modify the underlying raw Markdown
