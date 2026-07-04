@@ -45,6 +45,9 @@
   gap: 20px;
   height: 100%;
   align-items: flex-start;
+  min-width: 600px;
+  max-width: 1440px;
+  margin: 0;
 }
 
 .ek-page-editor-main {
@@ -211,4 +214,17 @@
 .ek-editor-panel-empty {
   color: var(--ek-text-faint);
   font-size: 12px;
+}
+
+@media (max-width: 768px) {
+  .ek-page-editor {
+    min-width: 0; /* the 600px desktop floor would force horizontal scrolling here */
+    flex-direction: column;
+  }
+
+  .ek-editor-panel {
+    width: 100%;
+    border-left: none;
+    padding-left: 0;
+  }
 }
