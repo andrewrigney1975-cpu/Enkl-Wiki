@@ -32,7 +32,8 @@ const ICONS = {
   arrowDown: '<path d="M12 5v14M5 12l7 7 7-7" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
   settings: '<circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
   image: '<rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.6" fill="none"/><circle cx="8.5" cy="9.5" r="1.5" fill="currentColor"/><path d="M21 16l-6-5-4 4-2-2-6 5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round"/>',
-  diagram: '<rect x="2" y="3" width="8" height="6" rx="1" stroke="currentColor" stroke-width="1.6" fill="none"/><rect x="14" y="3" width="8" height="6" rx="1" stroke="currentColor" stroke-width="1.6" fill="none"/><rect x="8" y="15" width="8" height="6" rx="1" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M6 9v3a3 3 0 0 0 3 3h1M18 9v3a3 3 0 0 1-3 3h-1" stroke="currentColor" stroke-width="1.6" fill="none"/>'
+  diagram: '<rect x="2" y="3" width="8" height="6" rx="1" stroke="currentColor" stroke-width="1.6" fill="none"/><rect x="14" y="3" width="8" height="6" rx="1" stroke="currentColor" stroke-width="1.6" fill="none"/><rect x="8" y="15" width="8" height="6" rx="1" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M6 9v3a3 3 0 0 0 3 3h1M18 9v3a3 3 0 0 1-3 3h-1" stroke="currentColor" stroke-width="1.6" fill="none"/>',
+  table: '<rect x="3" y="4" width="18" height="16" rx="1" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M3 9.5h18M3 15h18M9 4v16M15 4v16" stroke="currentColor" stroke-width="1.6"/>'
 };
 
 export function iconMarkup(name, size = 16) {

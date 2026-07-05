@@ -58,6 +58,20 @@ export function htmlToMarkdown(root) {
         return '---\n\n';
       case 'br':
         return '\n';
+      case 'table': {
+        const rows = [...node.querySelectorAll('tr')];
+        if (!rows.length) return '';
+        const cellText = (cell) => (walkChildren(cell).trim().replace(/\|/g, '\\|').replace(/\s+/g, ' ')) || ' ';
+        const rowCells = (tr) => [...tr.children].map(cellText);
+        const headerCells = rowCells(rows[0]);
+        const bodyRows = rows.slice(1).map(rowCells);
+        const lines = [
+          `| ${headerCells.join(' | ')} |`,
+          `| ${headerCells.map(() => '---').join(' | ')} |`,
+          ...bodyRows.map((cells) => `| ${cells.join(' | ')} |`)
+        ];
+        return lines.join('\n') + '\n\n';
+      }
       default:
         return walkChildren(node);
     }
@@ -75,6 +89,28 @@ const TOOLBAR_ACTIONS = [
   { icon: 'listOl', title: 'Numbered list', command: 'insertOrderedList' },
   { icon: 'code', title: 'Code block', command: 'formatBlock', value: 'pre' }
 ];
+
+const HEADING_OPTIONS = [
+  { value: '', label: 'Paragraph' },
+  { value: 'h1', label: 'Heading 1' },
+  { value: 'h2', label: 'Heading 2' },
+  { value: 'h3', label: 'Heading 3' },
+  { value: 'h4', label: 'Heading 4' },
+  { value: 'h5', label: 'Heading 5' },
+  { value: 'h6', label: 'Heading 6' }
+];
+
+const TABLE_PICKER_ROWS = 8;
+const TABLE_PICKER_COLS = 8;
+
+// rows/cols are 1-based and include the header row (row 1).
+export function buildTableHtml(rows, cols) {
+  const headerCells = Array.from({ length: cols }, (_, i) => `<th>Header ${i + 1}</th>`).join('');
+  const bodyRows = Array.from({ length: Math.max(rows - 1, 0) }, () =>
+    `<tr>${Array.from({ length: cols }, () => '<td>&nbsp;</td>').join('')}</tr>`
+  ).join('');
+  return `<table><thead><tr>${headerCells}</tr></thead><tbody>${bodyRows}</tbody></table><p><br></p>`;
+}
 
 export function createMarkdownEditor({ initialValue = '' } = {}) {
   const root = document.createElement('div');
@@ -94,24 +130,104 @@ export function createMarkdownEditor({ initialValue = '' } = {}) {
 
   let mode = 'wysiwyg';
 
+  function runCommand(command, value) {
+    wysiwyg.focus();
+    if (typeof document.execCommand === 'function') {
+      try {
+        document.execCommand(command, false, value);
+      } catch {
+        /* execCommand unsupported in this environment */
+      }
+    }
+  }
+
+  const headingSelect = document.createElement('select');
+  headingSelect.className = 'ek-md-heading-select';
+  headingSelect.title = 'Heading level';
+  for (const opt of HEADING_OPTIONS) {
+    const option = document.createElement('option');
+    option.value = opt.value;
+    option.textContent = opt.label;
+    headingSelect.appendChild(option);
+  }
+  headingSelect.addEventListener('change', () => {
+    runCommand('formatBlock', headingSelect.value || 'p');
+    headingSelect.value = ''; // this toolbar doesn't track live cursor position/current block
+  });
+  toolbar.appendChild(headingSelect);
+
   for (const action of TOOLBAR_ACTIONS) {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'ek-md-toolbar-btn';
     btn.title = action.title;
     btn.innerHTML = iconMarkup(action.icon, 15);
-    btn.addEventListener('click', () => {
-      wysiwyg.focus();
-      if (typeof document.execCommand === 'function') {
-        try {
-          document.execCommand(action.command, false, action.value);
-        } catch {
-          /* execCommand unsupported in this environment */
-        }
-      }
-    });
+    btn.addEventListener('click', () => runCommand(action.command, action.value));
     toolbar.appendChild(btn);
   }
+
+  const tableWrap = document.createElement('div');
+  tableWrap.className = 'ek-md-table-picker-wrap';
+
+  const tableBtn = document.createElement('button');
+  tableBtn.type = 'button';
+  tableBtn.className = 'ek-md-toolbar-btn';
+  tableBtn.title = 'Insert table';
+  tableBtn.innerHTML = iconMarkup('table', 15);
+
+  const tablePopover = document.createElement('div');
+  tablePopover.className = 'ek-md-table-picker ek-hidden';
+
+  const tableGrid = document.createElement('div');
+  tableGrid.className = 'ek-md-table-grid';
+
+  const tablePickerLabel = document.createElement('div');
+  tablePickerLabel.className = 'ek-md-table-picker-label';
+  tablePickerLabel.textContent = 'Insert table';
+
+  const gridCells = [];
+  function highlightGrid(row, col) {
+    for (const cell of gridCells) {
+      const r = Number(cell.dataset.row);
+      const c = Number(cell.dataset.col);
+      cell.classList.toggle('active', r <= row && c <= col);
+    }
+    tablePickerLabel.textContent = `${row + 1} x ${col + 1}`;
+  }
+
+  function closeTablePicker() {
+    tablePopover.classList.add('ek-hidden');
+    for (const cell of gridCells) cell.classList.remove('active');
+    tablePickerLabel.textContent = 'Insert table';
+  }
+
+  for (let r = 0; r < TABLE_PICKER_ROWS; r++) {
+    for (let c = 0; c < TABLE_PICKER_COLS; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'ek-md-table-grid-cell';
+      cell.dataset.row = String(r);
+      cell.dataset.col = String(c);
+      cell.addEventListener('mouseenter', () => highlightGrid(r, c));
+      cell.addEventListener('click', () => {
+        runCommand('insertHTML', buildTableHtml(r + 1, c + 1));
+        closeTablePicker();
+      });
+      tableGrid.appendChild(cell);
+      gridCells.push(cell);
+    }
+  }
+
+  tableBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    tablePopover.classList.toggle('ek-hidden');
+  });
+  document.addEventListener('click', (e) => {
+    if (!tableWrap.contains(e.target)) closeTablePicker();
+  });
+
+  tablePopover.append(tableGrid, tablePickerLabel);
+  tableWrap.append(tableBtn, tablePopover);
+  toolbar.appendChild(tableWrap);
 
   const modeToggle = document.createElement('button');
   modeToggle.type = 'button';

@@ -99,6 +99,63 @@
   font-weight: 500;
 }
 
+.ek-md-heading-select {
+  border: 1.5px solid var(--ek-border);
+  border-radius: 3px;
+  background: var(--ek-surface);
+  color: var(--ek-text-secondary);
+  font-size: 12px;
+  padding: 4px 6px;
+  margin-right: 2px;
+}
+
+.ek-md-heading-select:hover {
+  color: var(--ek-text);
+}
+
+.ek-md-table-picker-wrap {
+  position: relative;
+}
+
+.ek-md-table-picker {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 30;
+  background: var(--ek-surface);
+  border: 1px solid var(--ek-border);
+  border-radius: var(--ek-radius);
+  box-shadow: var(--ek-modal-shadow);
+  padding: 10px;
+}
+
+.ek-md-table-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 16px);
+  grid-template-rows: repeat(8, 16px);
+  gap: 2px;
+}
+
+.ek-md-table-grid-cell {
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--ek-border-strong);
+  background: var(--ek-panel-bg);
+  border-radius: 2px;
+}
+
+.ek-md-table-grid-cell.active {
+  background: var(--ek-blue);
+  border-color: var(--ek-blue-dark);
+}
+
+.ek-md-table-picker-label {
+  margin-top: 6px;
+  font-size: 12px;
+  text-align: center;
+  color: var(--ek-text-secondary);
+}
+
 .ek-md-wysiwyg {
   min-height: 260px;
   max-height: 50vh;
@@ -107,6 +164,24 @@
   background: var(--ek-input-bg);
   color: var(--ek-text);
   line-height: 1.6;
+}
+
+.ek-md-wysiwyg table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.ek-md-wysiwyg th,
+.ek-md-wysiwyg td {
+  border: 1px solid var(--ek-border);
+  padding: 6px 8px;
+  text-align: left;
+}
+
+.ek-md-wysiwyg th {
+  background: var(--ek-panel-bg);
+  font-weight: 600;
 }
 
 .ek-md-wysiwyg:focus {
