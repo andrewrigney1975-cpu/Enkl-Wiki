@@ -44,6 +44,31 @@ test('renders fenced code blocks without interpreting their contents as markdown
   assert.equal(html, '<pre><code class="language-js">const x = *not italic*;</code></pre>');
 });
 
+test('a fenced code block never leaks its internal placeholder text, even when content looks block-like', () => {
+  const html = renderMarkdown('```\nsome code\n# not a real heading\n- not a real list item\n```');
+  assert.ok(!html.includes('CODEBLOCK'));
+  assert.ok(!/\bCODE\d/.test(html));
+  assert.equal(html, '<pre><code>some code\n# not a real heading\n- not a real list item</code></pre>');
+});
+
+test('a closing fence is only recognized when it is alone on its own line', () => {
+  // Regression test: a naive "nearest triple-backtick" match would treat the
+  // ``` on the content line below as the closing fence, truncate the block,
+  // and leak the placeholder text used internally to protect it.
+  const html = renderMarkdown('```\nHeres how to open one: ```js\nactual end\n```');
+  assert.ok(!html.includes('CODEBLOCK'));
+  assert.match(html, /Heres how to open one: ```js/);
+  assert.match(html, /actual end/);
+  assert.equal((html.match(/<pre>/g) || []).length, 1);
+});
+
+test('two separate fenced code blocks in the same document parse independently', () => {
+  const html = renderMarkdown('```\nfirst\n```\n\nbetween\n\n```\nsecond\n```');
+  assert.match(html, /<pre><code>first<\/code><\/pre>/);
+  assert.match(html, /<p>between<\/p>/);
+  assert.match(html, /<pre><code>second<\/code><\/pre>/);
+});
+
 test('renders unordered and ordered lists', () => {
   assert.equal(renderMarkdown('- one\n- two'), '<ul><li>one</li><li>two</li></ul>');
   assert.equal(renderMarkdown('1. one\n2. two'), '<ol><li>one</li><li>two</li></ol>');

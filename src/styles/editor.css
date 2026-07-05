@@ -100,12 +100,15 @@
 }
 
 .ek-md-heading-select {
+  width: 110px !important;
+  min-width: 0; /* flex items default to a content-based automatic min-width, which can override a smaller declared width */
+  flex-shrink: 0;
   border: 1.5px solid var(--ek-border);
   border-radius: 3px;
   background: var(--ek-surface);
   color: var(--ek-text-secondary);
   font-size: 12px;
-  padding: 4px 6px;
+  padding: 4px 4px;
   margin-right: 2px;
 }
 
