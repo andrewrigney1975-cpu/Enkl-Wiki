@@ -48,6 +48,22 @@ test('the export button downloads a standalone HTML file for the current page', 
   teardownDom();
 });
 
+test('the print button calls window.print()', async () => {
+  setupDom();
+  let printCalled = false;
+  window.print = () => { printCalled = true; };
+
+  const container = document.createElement('div');
+  const page = { id: '1', title: 'Getting Started', slug: 'getting-started', tagIds: [] };
+  const provider = { getPageBody: async () => '# Hello' };
+  await renderPageView(container, { page, provider, tags: [] });
+
+  container.querySelector('.ek-page-print-btn').click();
+  assert.equal(printCalled, true);
+
+  teardownDom();
+});
+
 test('a slower render started earlier is superseded by a faster, later one', async () => {
   setupDom();
   const container = document.createElement('div');

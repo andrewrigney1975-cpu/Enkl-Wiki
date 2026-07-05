@@ -41,13 +41,24 @@ export async function renderPageView(container, { page, provider, tags = [] } = 
   title.className = 'ek-page-title';
   title.textContent = page.title;
 
+  const printBtn = document.createElement('button');
+  printBtn.type = 'button';
+  printBtn.className = 'ek-btn ek-btn-ghost ek-page-print-btn';
+  printBtn.title = 'Print this page or save it as a PDF';
+  printBtn.innerHTML = iconMarkup('print', 16);
+  printBtn.addEventListener('click', () => window.print());
+
   const exportBtn = document.createElement('button');
   exportBtn.type = 'button';
   exportBtn.className = 'ek-btn ek-btn-ghost ek-page-export-btn';
   exportBtn.title = 'Export this page as a standalone HTML file';
   exportBtn.innerHTML = iconMarkup('download', 16);
 
-  titleRow.append(title, exportBtn);
+  const titleActions = document.createElement('div');
+  titleActions.className = 'ek-page-title-actions';
+  titleActions.append(printBtn, exportBtn);
+
+  titleRow.append(title, titleActions);
   article.appendChild(titleRow);
 
   if (tagNames.length) {

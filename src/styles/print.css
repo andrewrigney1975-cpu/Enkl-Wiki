@@ -1,0 +1,40 @@
+/* Printing (including "Save as PDF" from the browser's print dialog) shows
+   only the current page's content — chrome, navigation and editor controls
+   are all hidden, and the reading pane's screen-only width/scroll
+   constraints are relaxed so the whole page flows across print pages. */
+@media print {
+  .ek-header,
+  .ek-toolstrip,
+  .ek-tree-pane,
+  .ek-drawer-backdrop,
+  .ek-mobile-menu-btn,
+  .ek-page-export-btn,
+  .ek-page-print-btn,
+  .ek-overlay,
+  .ek-search-results {
+    display: none;
+  }
+
+  #app,
+  .ek-app-body,
+  .ek-main-content {
+    display: block;
+    height: auto;
+    overflow: visible;
+  }
+
+  .ek-page {
+    min-width: 0;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .ek-page-body pre,
+  .ek-page-body table,
+  .ek-page-body blockquote,
+  .ek-page-body img,
+  .ek-page-body video {
+    break-inside: avoid;
+  }
+}
