@@ -13,6 +13,7 @@ import { initRouter, navigateToSlug, getCurrentSlug } from './router.js';
 import { renderTree } from '../ui/tree-view.js';
 import { renderPageView } from '../ui/page-view.js';
 import { createSearchBox } from '../ui/search-box.js';
+import { exportConfig } from '../storage/import-export.js';
 
 function renderHeader({ onToggleLock, onOpenSettings, onToggleMenu, searchBoxRoot }) {
   const header = document.createElement('header');
@@ -151,7 +152,14 @@ export async function renderApp(root) {
   hierarchyBtn.innerHTML = iconMarkup('folder', 18);
   hierarchyBtn.addEventListener('click', () => showHierarchyModal());
 
-  toolStrip.append(newPageBtn, editPageBtn, hierarchyBtn);
+  const exportDataBtn = document.createElement('button');
+  exportDataBtn.type = 'button';
+  exportDataBtn.className = 'ek-toolstrip-btn';
+  exportDataBtn.title = 'Export Data';
+  exportDataBtn.innerHTML = iconMarkup('download', 18);
+  exportDataBtn.addEventListener('click', () => exportConfig(getConfig()));
+
+  toolStrip.append(newPageBtn, editPageBtn, hierarchyBtn, exportDataBtn);
 
   const treePane = document.createElement('nav');
   treePane.className = 'ek-tree-pane';
