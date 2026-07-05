@@ -21,4 +21,4 @@ Runs the jsdom-based unit, feature, and smoke tests under `tests/`.
 
 ## Editing
 
-The default editor credential is `foobar` — click the lock icon in the header to unlock page, hierarchy, and upload editing. Change it from Site Settings once unlocked.
+The default editor credential is `***************` — click the lock icon in the header to unlock page, hierarchy, and upload editing. Change it from Site Settings once unlocked.
