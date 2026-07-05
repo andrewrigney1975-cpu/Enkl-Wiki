@@ -1,5 +1,10 @@
 import { SHAPE_TYPES } from './diagram-shapes.js';
 
+// Standalone SVG files can't rely on the app's Google Font <link> having
+// loaded, so labels explicitly request the same font stack as the rest of
+// the UI (see --ek-font in theme.css) with system-font fallbacks.
+const LABEL_FONT_FAMILY = "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
+
 function escapeXml(str) {
   return String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[c]));
 }
@@ -22,7 +27,7 @@ export function serializeDiagramToSvg(data, { width = 900, height = 560 } = {}) 
       ? `<path d="M${a.x},${a.y} Q${(a.x + b.x) / 2},${(a.y + b.y) / 2 - 40} ${b.x},${b.y}" fill="none" stroke="#6b778c" stroke-width="1.5" marker-end="url(#ekArrow)"/>`
       : `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="#6b778c" stroke-width="1.5" marker-end="url(#ekArrow)"/>`;
     const label = conn.label
-      ? `<text x="${(a.x + b.x) / 2}" y="${(a.y + b.y) / 2 - 6}" text-anchor="middle" font-size="11" fill="#172b4d">${escapeXml(conn.label)}</text>`
+      ? `<text x="${(a.x + b.x) / 2}" y="${(a.y + b.y) / 2 - 6}" text-anchor="middle" font-family="${LABEL_FONT_FAMILY}" font-size="11" fill="#172b4d">${escapeXml(conn.label)}</text>`
       : '';
     return line + label;
   }).join('');
@@ -32,7 +37,7 @@ export function serializeDiagramToSvg(data, { width = 900, height = 560 } = {}) 
     const body = def ? def.body(shape.w, shape.h) : '';
     return `<g transform="translate(${shape.x},${shape.y})">`
       + `<g fill="#f1f2f4" stroke="#333333" stroke-width="1.5">${body}</g>`
-      + `<text x="${shape.w / 2}" y="${shape.h / 2}" text-anchor="middle" dominant-baseline="middle" font-size="12" fill="#172b4d">${escapeXml(shape.label)}</text>`
+      + `<text x="${shape.w / 2}" y="${shape.h / 2}" text-anchor="middle" dominant-baseline="middle" font-family="${LABEL_FONT_FAMILY}" font-size="12" fill="#172b4d">${escapeXml(shape.label)}</text>`
       + '</g>';
   }).join('');
 

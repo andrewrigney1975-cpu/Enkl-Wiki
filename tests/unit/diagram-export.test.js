@@ -37,6 +37,19 @@ test('serializeDiagramToSvg escapes XML-sensitive characters in labels', () => {
   assert.ok(!svg.includes('<script>'));
 });
 
+test('serializeDiagramToSvg explicitly sets a font-family on shape and connector labels', () => {
+  const svg = serializeDiagramToSvg({
+    shapes: [
+      { id: 'a', type: 'process', x: 0, y: 0, w: 100, h: 50, label: 'A' },
+      { id: 'b', type: 'process', x: 200, y: 0, w: 100, h: 50, label: 'B' }
+    ],
+    connectors: [{ id: 'c1', fromId: 'a', toId: 'b', style: 'straight', label: 'yes' }]
+  });
+  const fontDeclarations = svg.match(/font-family="[^"]+"/g) || [];
+  assert.equal(fontDeclarations.length, 3); // 2 shape labels + 1 connector label
+  for (const decl of fontDeclarations) assert.match(decl, /Inter/);
+});
+
 test('serializeDiagramToSvg renders a curved connector as a quadratic path', () => {
   const svg = serializeDiagramToSvg({
     shapes: [
