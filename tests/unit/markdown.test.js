@@ -40,8 +40,20 @@ test('embeds images as <img>, audio files as <audio>, video files as <video>', (
 });
 
 test('renders fenced code blocks without interpreting their contents as markdown', () => {
-  const html = renderMarkdown('```js\nconst x = *not italic*;\n```');
-  assert.equal(html, '<pre><code class="language-js">const x = *not italic*;</code></pre>');
+  const html = renderMarkdown('```text\nconst x = *not italic*;\n```');
+  assert.equal(html, '<pre><code class="language-text">const x = *not italic*;</code></pre>');
+});
+
+test('fenced code blocks with a recognized language are syntax-highlighted', () => {
+  const html = renderMarkdown('```js\nconst x = 1;\n```');
+  assert.match(html, /^<pre><code class="language-js">/);
+  assert.match(html, /<span class="token keyword">const<\/span>/);
+  assert.match(html, /<span class="token number">1<\/span>/);
+});
+
+test('fenced code blocks with an unrecognized language fall back to plain escaped text', () => {
+  const html = renderMarkdown('```made-up-lang\n<b>literal</b>\n```');
+  assert.equal(html, '<pre><code class="language-made-up-lang">&lt;b&gt;literal&lt;/b&gt;</code></pre>');
 });
 
 test('a fenced code block never leaks its internal placeholder text, even when content looks block-like', () => {

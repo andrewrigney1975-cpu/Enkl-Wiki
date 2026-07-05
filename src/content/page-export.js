@@ -11,6 +11,14 @@ audio{width:100%;}
 blockquote{border-left:3px solid #c1c7d0;margin:0 0 16px;padding:2px 16px;color:#6b778c;}
 table{border-collapse:collapse;width:100%;margin-bottom:16px;}
 th,td{border:1px solid #dfe1e6;padding:6px 10px;text-align:left;}
+.token.comment{color:#8993a4;font-style:italic;}
+.token.string,.token.char,.token.attr-value{color:#216e4e;}
+.token.number,.token.boolean,.token.constant,.token.symbol{color:#974f0c;}
+.token.keyword,.token.atrule,.token.important,.token.regex{color:#944df3;}
+.token.function,.token.class-name{color:#0c66e4;}
+.token.tag,.token.selector,.token.deleted{color:#ae2e24;}
+.token.attr-name,.token.builtin,.token.inserted{color:#974f0c;}
+.token.punctuation,.token.operator,.token.entity,.token.url{color:#6b778c;}
 `.trim();
 
 function escapeHtml(str) {

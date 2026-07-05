@@ -1,0 +1,67 @@
+/* Prism token colors, mapped to the --ek-syntax-* variables in theme.css so
+   highlighted code follows the app's light/dark toggle automatically. */
+code[class*="language-"],
+pre[class*="language-"] {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: var(--ek-syntax-comment);
+  font-style: italic;
+}
+
+.token.string,
+.token.char,
+.token.attr-value {
+  color: var(--ek-syntax-string);
+}
+
+.token.number,
+.token.boolean,
+.token.constant,
+.token.symbol {
+  color: var(--ek-syntax-number);
+}
+
+.token.keyword,
+.token.atrule,
+.token.important,
+.token.regex {
+  color: var(--ek-syntax-keyword);
+}
+
+.token.function,
+.token.class-name {
+  color: var(--ek-syntax-function);
+}
+
+.token.tag,
+.token.selector,
+.token.deleted {
+  color: var(--ek-syntax-tag);
+}
+
+.token.attr-name,
+.token.builtin,
+.token.inserted {
+  color: var(--ek-syntax-attr);
+}
+
+.token.punctuation,
+.token.operator,
+.token.entity,
+.token.url {
+  color: var(--ek-syntax-punctuation);
+}
+
+.token.bold {
+  font-weight: 700;
+}
+
+.token.italic {
+  font-style: italic;
+}

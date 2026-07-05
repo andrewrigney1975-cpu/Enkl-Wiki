@@ -25,6 +25,24 @@ test('htmlToMarkdown preserves fenced code block language and content', () => {
   teardownDom();
 });
 
+test('a syntax-highlighted code block (with nested token spans) still serializes back to plain code text', () => {
+  setupDom();
+  const div = document.createElement('div');
+  // Mimics what renderMarkdown() + Prism actually produce for a recognized language.
+  div.innerHTML = '<pre><code class="language-js"><span class="token keyword">const</span> x <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span></code></pre>';
+  const md = htmlToMarkdown(div);
+  assert.equal(md.trim(), '```js\nconst x = 1;\n```');
+  teardownDom();
+});
+
+test('a Markdown code fence with a recognized language survives a full WYSIWYG render -> serialize round trip', () => {
+  setupDom();
+  const editor = createMarkdownEditor({ initialValue: '```js\nconst x = 1;\n```' });
+  assert.ok(editor.root.querySelector('.ek-md-wysiwyg .token.keyword'), 'the WYSIWYG preview should show highlighted tokens');
+  assert.equal(editor.getValue().trim(), '```js\nconst x = 1;\n```');
+  teardownDom();
+});
+
 test('createMarkdownEditor initializes the WYSIWYG surface from Markdown and getValue() serializes it back', () => {
   setupDom();
   const editor = createMarkdownEditor({ initialValue: '# Hello\n\nWorld' });
