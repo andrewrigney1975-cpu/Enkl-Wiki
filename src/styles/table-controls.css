@@ -1,0 +1,105 @@
+/* Interactive sort/filter/export controls added to rendered page tables —
+   see src/content/table-controls.js. */
+.ek-table-enhanced {
+  margin-bottom: 16px;
+}
+
+.ek-table-enhanced table {
+  margin-bottom: 0;
+}
+
+.ek-table-toolbar-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.ek-table-export-btn {
+  font-size: 12px;
+  padding: 5px 10px;
+}
+
+.ek-table-toolbar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  background: none;
+  border: 1px solid var(--ek-border-strong);
+  border-radius: var(--ek-radius);
+  color: var(--ek-text-secondary);
+}
+
+.ek-table-toolbar-btn:hover {
+  background: var(--ek-hover-tint);
+  color: var(--ek-text);
+}
+
+.ek-table-toolbar-btn.active {
+  background: var(--ek-blue);
+  border-color: var(--ek-blue);
+  color: #fff;
+}
+
+.ek-table-clear-filters-btn {
+  color: var(--ek-danger);
+  border-color: var(--ek-danger);
+}
+
+.ek-table-clear-filters-btn:hover {
+  background: var(--ek-danger-hover-bg);
+  color: var(--ek-danger);
+}
+
+.ek-page-body th.ek-table-sortable {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.ek-page-body th.ek-table-sortable:hover {
+  background: var(--ek-panel-bg-hover);
+}
+
+.ek-table-sort-indicator {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+  margin-left: 4px;
+  color: var(--ek-blue);
+}
+
+.ek-page-body .ek-table-filter-row th {
+  background: var(--ek-surface);
+  padding: 6px 8px;
+  font-weight: 400;
+}
+
+.ek-table-filter-input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--ek-border);
+  border-radius: 3px;
+  padding: 4px 6px;
+  font-size: 12px;
+  color: var(--ek-text);
+  background: var(--ek-input-bg);
+}
+
+.ek-table-filter-input:focus {
+  outline: none;
+  border-color: var(--ek-blue);
+  background: var(--ek-input-bg-focus);
+}
+
+.ek-table-filter-range {
+  display: flex;
+  gap: 4px;
+}
+
+.ek-table-filter-range .ek-table-filter-input {
+  min-width: 0;
+}

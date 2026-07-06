@@ -12,7 +12,9 @@
   .ek-page-export-btn,
   .ek-page-print-btn,
   .ek-overlay,
-  .ek-search-results {
+  .ek-search-results,
+  .ek-table-toolbar-row,
+  .ek-table-filter-row {
     display: none;
   }
 

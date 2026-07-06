@@ -38,7 +38,8 @@ const ICONS = {
   // Two chevrons pointing toward each other ("><"), for "shrink to content".
   tableResponsive: '<path d="M9 7l4 5-4 5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 7l-4 5 4 5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
   // Two chevrons pointing away from each other ("<>"), for "stretch to fill".
-  tableFull: '<path d="M10 7L6 12l4 5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 7l4 5-4 5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+  tableFull: '<path d="M10 7L6 12l4 5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 7l4 5-4 5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+  filter: '<path d="M4 5h16l-6 8v6l-4 2v-8z" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round"/>'
 };
 
 export function iconMarkup(name, size = 16) {

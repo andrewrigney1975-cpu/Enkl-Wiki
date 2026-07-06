@@ -2,6 +2,7 @@ import { renderMarkdown } from '../content/markdown.js';
 import { tagNamesForIds } from '../content/tag-model.js';
 import { exportPageAsHtml } from '../content/page-export.js';
 import { slugify } from '../content/page-model.js';
+import { enhanceTable } from '../content/table-controls.js';
 import { iconMarkup } from './icons.js';
 
 // Guards against a slow provider.getPageBody() resolving after the user has
@@ -148,7 +149,18 @@ export async function renderPageView(container, { page, provider, tags = [] } = 
   content.innerHTML = renderMarkdown(body);
   article.appendChild(content);
 
-  exportBtn.addEventListener('click', () => exportPageAsHtml(page, content.innerHTML));
+  // Captured before table enhancement below adds interactive sort/filter/
+  // export controls to the live DOM — the standalone HTML export should stay
+  // exactly what renderMarkdown() produced, since those controls are inert
+  // without this module's JS wiring.
+  const cleanBodyHtml = content.innerHTML;
+  exportBtn.addEventListener('click', () => exportPageAsHtml(page, cleanBodyHtml));
+
+  const tables = [...content.querySelectorAll('table')];
+  tables.forEach((table, i) => {
+    const filenameHint = tables.length > 1 ? `${page.slug || 'table'}-table-${i + 1}` : `${page.slug || 'table'}`;
+    enhanceTable(table, { filenameHint });
+  });
 
   const outline = buildTocOutline(content);
   if (outline.length) {

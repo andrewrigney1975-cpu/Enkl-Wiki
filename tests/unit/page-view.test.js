@@ -48,6 +48,54 @@ test('the export button downloads a standalone HTML file for the current page', 
   teardownDom();
 });
 
+test('a table in the page body gets interactive sort/filter/export controls', async () => {
+  setupDom();
+  const container = document.createElement('div');
+  const page = { id: '1', title: 'Data', slug: 'data', tagIds: [] };
+  const provider = { getPageBody: async () => '| A | B |\n| --- | --- |\n| 1 | 2 |' };
+
+  await renderPageView(container, { page, provider, tags: [] });
+
+  assert.ok(container.querySelector('.ek-table-enhanced'));
+  assert.ok(container.querySelector('.ek-table-filter-row'));
+  assert.ok(container.querySelector('.ek-table-export-btn'));
+  assert.ok(container.querySelector('th.ek-table-sortable'));
+
+  teardownDom();
+});
+
+test('the standalone HTML export stays clean of the interactive table controls', async () => {
+  setupDom();
+  const originalCreateElement = document.createElement.bind(document);
+  let exportedHtml = null;
+  document.createElement = (tag) => {
+    const el = originalCreateElement(tag);
+    if (tag === 'a') {
+      el.click = () => {
+        // The export creates a Blob URL; recover its text via the Blob given to createObjectURL.
+      };
+    }
+    return el;
+  };
+  const originalCreateObjectURL = URL.createObjectURL;
+  URL.createObjectURL = (blob) => { exportedHtml = blob; return 'blob:mock'; };
+
+  const container = document.createElement('div');
+  const page = { id: '1', title: 'Data', slug: 'data', tagIds: [] };
+  const provider = { getPageBody: async () => '| A | B |\n| --- | --- |\n| 1 | 2 |' };
+  await renderPageView(container, { page, provider, tags: [] });
+
+  container.querySelector('.ek-page-export-btn').click();
+  const text = await exportedHtml.text();
+  assert.ok(!text.includes('ek-table-filter-row'));
+  assert.ok(!text.includes('ek-table-export-btn'));
+  assert.ok(!text.includes('ek-table-enhanced'));
+  assert.match(text, /<table>/);
+
+  URL.createObjectURL = originalCreateObjectURL;
+  teardownDom();
+});
+
 test('the print button calls window.print()', async () => {
   setupDom();
   let printCalled = false;
