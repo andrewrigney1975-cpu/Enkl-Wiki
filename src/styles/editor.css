@@ -1,7 +1,7 @@
 .ek-toolstrip {
   width: 48px;
   min-width: 48px;
-  background: var(--ek-bg);
+  background: var(--ek-surface);
   border-right: 1px solid var(--ek-border);
   display: flex;
   flex-direction: column;

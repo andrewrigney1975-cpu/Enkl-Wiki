@@ -3,7 +3,8 @@
   --ek-blue-dark: #09419e;
   --ek-navy: #0c2a52;
   --ek-navy-light: #163a6b;
-  --ek-bg: #f7f8f9;
+  /*--ek-bg: #f7f8f9;*/
+  --ek-bg: #ffffff;
   --ek-surface: #ffffff;
   --ek-panel-bg: #f1f2f4;
   --ek-panel-bg-hover: #e3e6ea;
@@ -47,7 +48,8 @@
 :root[data-theme="dark"] {
   --ek-blue: #579dff;
   --ek-blue-dark: #388bff;
-  --ek-bg: #14171a;
+  /*--ek-bg: #14171a;*/
+  --ek-bg: #222272b;
   --ek-surface: #22272b;
   --ek-panel-bg: #1d2125;
   --ek-panel-bg-hover: #282e33;
