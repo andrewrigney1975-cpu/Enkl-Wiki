@@ -1,7 +1,6 @@
 import { openModal } from './modal.js';
 import { createDiagramEditor } from '../diagram/diagram-editor.js';
-import { saveBlob } from '../storage/file-io.js';
-import { getConfig, persist, notifyChanged } from '../app/state.js';
+import { recordUpload } from '../app/state.js';
 
 export function showDiagramModal({ onExported } = {}) {
   const diagram = createDiagramEditor({});
@@ -26,17 +25,9 @@ export function showDiagramModal({ onExported } = {}) {
   exportBtn.addEventListener('click', async () => {
     const svgText = diagram.exportSvgText();
     const filename = `diagram-${Date.now()}.svg`;
-    const result = await saveBlob(filename, new Blob([svgText], { type: 'image/svg+xml' }), {
-      mimeType: 'image/svg+xml',
-      description: 'Diagram'
-    });
-
-    const config = getConfig();
-    config.uploads.push({ filename: result.filename, uploadedAt: new Date().toISOString() });
-    persist();
-    notifyChanged();
+    const upload = await recordUpload(new Blob([svgText], { type: 'image/svg+xml' }), filename);
     handle.close();
-    if (onExported) onExported(result.filename);
+    if (onExported) onExported(upload);
   });
 
   return handle;

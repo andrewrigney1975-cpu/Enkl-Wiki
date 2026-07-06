@@ -5,15 +5,14 @@ import { showAuthModal } from '../ui/auth-modal.js';
 import { showPageEditorModal } from '../ui/page-editor-modal.js';
 import { showHierarchyModal } from '../ui/hierarchy-modal.js';
 import { showSiteSettingsModal } from '../ui/site-settings-modal.js';
-import { isUnlocked, setUnlocked } from '../auth/credential.js';
+import { isUnlocked, setUnlocked, setAuthToken } from '../auth/credential.js';
 import {
-  initState, getConfig, getProvider, getPages, getTags, findPageBySlug, firstVisiblePage, subscribe
+  initState, getConfig, getProvider, getPages, getTags, findPageBySlug, firstVisiblePage, subscribe, exportSiteData
 } from './state.js';
 import { initRouter, navigateToSlug, getCurrentSlug } from './router.js';
 import { renderTree } from '../ui/tree-view.js';
 import { renderPageView } from '../ui/page-view.js';
 import { createSearchBox } from '../ui/search-box.js';
-import { exportConfig } from '../storage/import-export.js';
 
 function renderHeader({ onToggleLock, onOpenSettings, onToggleMenu, searchBoxRoot }) {
   const header = document.createElement('header');
@@ -85,6 +84,7 @@ export async function renderApp(root) {
   function handleToggleLock() {
     if (isUnlocked()) {
       setUnlocked(false);
+      setAuthToken(null);
       refreshLockBtn();
       renderCurrentRoute();
     } else {
@@ -157,7 +157,7 @@ export async function renderApp(root) {
   exportDataBtn.className = 'ek-toolstrip-btn';
   exportDataBtn.title = 'Export Data';
   exportDataBtn.innerHTML = iconMarkup('download', 18);
-  exportDataBtn.addEventListener('click', () => exportConfig(getConfig()));
+  exportDataBtn.addEventListener('click', () => exportSiteData());
 
   toolStrip.append(newPageBtn, editPageBtn, hierarchyBtn, exportDataBtn);
 

@@ -3,3 +3,10 @@ dist/
 *.log
 
 Enkl-Wiki.md
+
+# .NET API (server/)
+server/**/bin/
+server/**/obj/
+server/EnklWiki.Api/appsettings.Production.json
+server/uploads/
+.env

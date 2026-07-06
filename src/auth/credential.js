@@ -5,6 +5,7 @@
 // secret, so a plain string compare of the resulting hex digests is fine —
 // no need for constant-time comparison here.
 const SESSION_KEY = 'enklwiki_unlocked';
+const TOKEN_KEY = 'enklwiki_auth_token';
 const PBKDF2_ITERATIONS = 100000;
 const DEFAULT_CREDENTIAL = 'foobar';
 
@@ -67,6 +68,26 @@ export function setUnlocked(value) {
   try {
     if (value) sessionStorage.setItem(SESSION_KEY, '1');
     else sessionStorage.removeItem(SESSION_KEY);
+  } catch {
+    /* storage unavailable */
+  }
+}
+
+// In rdbms mode, "unlocked" also means holding a JWT from POST /api/auth/login
+// — kept in sessionStorage so it shares the same "unlocked for this tab"
+// lifetime as the client-only modes' unlock flag.
+export function getAuthToken() {
+  try {
+    return sessionStorage.getItem(TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function setAuthToken(token) {
+  try {
+    if (token) sessionStorage.setItem(TOKEN_KEY, token);
+    else sessionStorage.removeItem(TOKEN_KEY);
   } catch {
     /* storage unavailable */
   }

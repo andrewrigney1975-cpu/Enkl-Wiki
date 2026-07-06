@@ -1,5 +1,6 @@
 import { openModal } from './modal.js';
-import { verifyCredential, setUnlocked } from '../auth/credential.js';
+import { verifyCredential, setUnlocked, setAuthToken } from '../auth/credential.js';
+import { isRdbmsMode, getApiBaseUrl, loginToApi } from '../app/state.js';
 
 export function showAuthModal({ config, onUnlocked } = {}) {
   const body = document.createElement('div');
@@ -35,18 +36,36 @@ export function showAuthModal({ config, onUnlocked } = {}) {
   const error = body.querySelector('#ekAuthError');
   input.focus();
 
+  function showInvalid(message) {
+    error.textContent = message;
+    error.classList.remove('ek-hidden');
+    input.value = '';
+    input.focus();
+  }
+
   async function attempt() {
     const secret = input.value;
+
+    if (isRdbmsMode()) {
+      try {
+        const token = await loginToApi(getApiBaseUrl(), secret);
+        setAuthToken(token);
+        setUnlocked(true);
+        handle.close();
+        if (onUnlocked) onUnlocked();
+      } catch (err) {
+        showInvalid(err.status === 401 ? 'That credential is not correct.' : (err.message || 'Could not reach the API.'));
+      }
+      return;
+    }
+
     const ok = await verifyCredential(secret, config.settings.credentialSalt, config.settings.credentialHash);
     if (ok) {
       setUnlocked(true);
       handle.close();
       if (onUnlocked) onUnlocked();
     } else {
-      error.textContent = 'That credential is not correct.';
-      error.classList.remove('ek-hidden');
-      input.value = '';
-      input.focus();
+      showInvalid('That credential is not correct.');
     }
   }
 

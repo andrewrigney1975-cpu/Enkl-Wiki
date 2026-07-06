@@ -1,6 +1,5 @@
 import { openModal } from './modal.js';
-import { saveBlob } from '../storage/file-io.js';
-import { getConfig, persist, notifyChanged } from '../app/state.js';
+import { recordUpload } from '../app/state.js';
 
 const ALLOWED_EXTENSIONS = ['svg', 'png', 'jpg', 'jpeg', 'mp3', 'mp4', 'pdf'];
 
@@ -61,16 +60,16 @@ export function showUploadModal({ onUploaded } = {}) {
       return;
     }
 
-    const result = await saveBlob(file.name, file, { mimeType: file.type || 'application/octet-stream', description: 'Upload' });
-
-    const config = getConfig();
-    if (!config.uploads.some((u) => u.filename === result.filename)) {
-      config.uploads.push({ filename: result.filename, uploadedAt: new Date().toISOString() });
+    let upload;
+    try {
+      upload = await recordUpload(file, file.name);
+    } catch (err) {
+      showError(err.message || 'Could not upload that file.');
+      return;
     }
-    persist();
-    notifyChanged();
+
     handle.close();
-    if (onUploaded) onUploaded(result.filename);
+    if (onUploaded) onUploaded(upload);
   });
 
   return handle;

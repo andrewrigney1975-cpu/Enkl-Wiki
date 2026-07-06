@@ -110,6 +110,7 @@ test('reparenting a page via the parent select updates its parentId', async () =
   const select = rowB.querySelector('.ek-hierarchy-parent-select');
   select.value = 'a';
   select.dispatchEvent(new window.Event('change'));
+  await tick();
 
   assert.equal(getPages().find((p) => p.id === 'b').parentId, 'a');
 

@@ -21,8 +21,8 @@ test('uploading a file via the upload modal saves it (download fallback) and rec
     return el;
   };
 
-  let uploadedFilename = null;
-  showUploadModal({ onUploaded: (filename) => { uploadedFilename = filename; } });
+  let uploaded = null;
+  showUploadModal({ onUploaded: (upload) => { uploaded = upload; } });
 
   const fileInput = document.querySelector('input[type="file"]');
   const file = new File(['fake image bytes'], 'photo.png', { type: 'image/png' });
@@ -31,7 +31,7 @@ test('uploading a file via the upload modal saves it (download fallback) and rec
   document.querySelector('.ek-btn-primary').click();
   await tick();
 
-  assert.equal(uploadedFilename, 'photo.png');
+  assert.deepEqual(uploaded, { filename: 'photo.png', url: 'uploads/photo.png' });
   assert.deepEqual(getConfig().uploads.map((u) => u.filename), ['photo.png']);
 
   teardownDom();
@@ -70,8 +70,8 @@ test('exporting a diagram saves it to uploads and reports the filename via onExp
     return el;
   };
 
-  let exportedFilename = null;
-  showDiagramModal({ onExported: (filename) => { exportedFilename = filename; } });
+  let exported = null;
+  showDiagramModal({ onExported: (upload) => { exported = upload; } });
 
   const addProcessBtn = [...document.querySelectorAll('.ek-diagram-shape-btn')].find((b) => b.textContent === 'Process');
   addProcessBtn.click();
@@ -80,9 +80,10 @@ test('exporting a diagram saves it to uploads and reports the filename via onExp
   document.querySelector('.ek-btn-primary').click();
   await tick();
 
-  assert.match(exportedFilename, /^diagram-\d+\.svg$/);
+  assert.match(exported.filename, /^diagram-\d+\.svg$/);
+  assert.equal(exported.url, `uploads/${exported.filename}`);
   assert.equal(getConfig().uploads.length, 1);
-  assert.equal(getConfig().uploads[0].filename, exportedFilename);
+  assert.equal(getConfig().uploads[0].filename, exported.filename);
 
   teardownDom();
 });

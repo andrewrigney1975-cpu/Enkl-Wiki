@@ -4,9 +4,8 @@ import { createEditorPanel } from './editor-panel.js';
 import { showUploadModal } from './upload-modal.js';
 import { showDiagramModal } from './diagram-modal.js';
 import { iconMarkup } from './icons.js';
-import { createPage } from '../content/page-model.js';
-import { findOrCreateTag, parseTagTokens, tagNamesForIds } from '../content/tag-model.js';
-import { getConfig, getProvider, getPages, getTags, getUploads, persist, notifyChanged } from '../app/state.js';
+import { parseTagTokens, tagNamesForIds } from '../content/tag-model.js';
+import { getProvider, getPages, getTags, getUploads, createPage, updatePageMetadata } from '../app/state.js';
 
 // Page slugs are assigned once at creation and never change on rename, so
 // existing #!/slug links and bookmarks keep working after an edit.
@@ -95,7 +94,7 @@ export function showPageEditorModal({ mode, page = null, parentId = null, onSave
     uploadBtn.title = 'Upload a file';
     uploadBtn.innerHTML = iconMarkup('upload', 15);
     uploadBtn.addEventListener('click', () => {
-      showUploadModal({ onUploaded: (filename) => editor.insertText(`![](uploads/${filename})`) });
+      showUploadModal({ onUploaded: (upload) => editor.insertText(`![](${upload.url})`) });
     });
 
     const diagramBtn = document.createElement('button');
@@ -104,7 +103,7 @@ export function showPageEditorModal({ mode, page = null, parentId = null, onSave
     diagramBtn.title = 'Insert a diagram';
     diagramBtn.innerHTML = iconMarkup('diagram', 15);
     diagramBtn.addEventListener('click', () => {
-      showDiagramModal({ onExported: (filename) => editor.insertText(`![diagram](uploads/${filename})`) });
+      showDiagramModal({ onExported: (upload) => editor.insertText(`![diagram](${upload.url})`) });
     });
 
     const toolbar = editor.root.querySelector('.ek-md-toolbar');
@@ -122,27 +121,20 @@ export function showPageEditorModal({ mode, page = null, parentId = null, onSave
     if (!editor) return; // still loading the existing body
 
     const markdown = editor.getValue();
-    const config = getConfig();
-
     const explicitTagNames = tagsInput.value.split(/[,\s]+/).map((s) => s.trim()).filter(Boolean);
-    const tagIds = [];
-    for (const raw of [...explicitTagNames, ...parseTagTokens(markdown)]) {
-      const tag = findOrCreateTag(config.tags, raw);
-      if (tag && !tagIds.includes(tag.id)) tagIds.push(tag.id);
+    const tagNames = [...explicitTagNames, ...parseTagTokens(markdown)];
+
+    let targetPage;
+    try {
+      targetPage = isCreate
+        ? await createPage({ title, parentId, tagNames })
+        : await updatePageMetadata(page, { title, tagNames });
+      await getProvider().savePageBody(targetPage, markdown);
+    } catch (err) {
+      showError(err.message || 'Could not save this page.');
+      return;
     }
 
-    let targetPage = page;
-    if (isCreate) {
-      targetPage = createPage({ title, parentId, existingSlugs: getPages().map((p) => p.slug) });
-      config.pages.push(targetPage);
-    } else {
-      targetPage.title = title;
-    }
-    targetPage.tagIds = tagIds;
-
-    await getProvider().savePageBody(targetPage, markdown);
-    persist();
-    notifyChanged();
     handle.close();
     if (onSaved) onSaved(targetPage);
   });

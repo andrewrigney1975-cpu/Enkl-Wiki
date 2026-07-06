@@ -1,0 +1,6 @@
+@EnklWiki.Api_HostAddress = http://localhost:5062
+
+GET {{EnklWiki.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="EnklWiki.Api.Tests/EnklWiki.Api.Tests.csproj" />
+  <Project Path="EnklWiki.Api/EnklWiki.Api.csproj" />
+</Solution>

@@ -3,10 +3,8 @@ import { showConfirmModal } from './confirm-modal.js';
 import { showOrphanResolutionModal } from './orphan-resolution-modal.js';
 import { showPageEditorModal } from './page-editor-modal.js';
 import { iconMarkup } from './icons.js';
-import {
-  getChildren, getDescendantIds, deletePageWithChildren, buildPageTree, moveSiblingPage
-} from '../content/page-model.js';
-import { getConfig, getPages, persist, notifyChanged } from '../app/state.js';
+import { getChildren, getDescendantIds, buildPageTree } from '../content/page-model.js';
+import { getPages, reparentPage, movePageSibling, setPageArchived, deletePage } from '../app/state.js';
 
 export function showHierarchyModal() {
   const container = document.createElement('div');
@@ -30,57 +28,44 @@ export function showHierarchyModal() {
     return getPages().filter((p) => !excluded.has(p.id));
   }
 
-  function handleDelete(page) {
+  async function handleDelete(page) {
     const children = getChildren(getPages(), page.id);
     if (children.length === 0) {
-      showConfirmModal({
+      const ok = await showConfirmModal({
         title: 'Delete page?',
         message: `Delete "${page.title}"? This cannot be undone.`,
         confirmLabel: 'Delete'
-      }).then((ok) => {
-        if (!ok) return;
-        const config = getConfig();
-        config.pages = deletePageWithChildren(config.pages, page.id, { type: 'cascade' });
-        persist();
-        notifyChanged();
-        rerender();
       });
+      if (!ok) return;
+      await deletePage(page, { type: 'cascade' });
+      rerender();
       return;
     }
 
     showOrphanResolutionModal({
       page,
       candidateParents: candidateParentsFor(page.id),
-      onResolve: (resolution) => {
-        const config = getConfig();
-        config.pages = deletePageWithChildren(config.pages, page.id, resolution);
-        persist();
-        notifyChanged();
+      onResolve: async (resolution) => {
+        await deletePage(page, resolution);
         rerender();
       }
     });
   }
 
-  function handleReparent(page, newParentId) {
+  async function handleReparent(page, newParentId) {
     const forbidden = new Set([page.id, ...getDescendantIds(getPages(), page.id)]);
     if (forbidden.has(newParentId)) return;
-    page.parentId = newParentId || null;
-    persist();
-    notifyChanged();
+    await reparentPage(page, newParentId || null);
     rerender();
   }
 
-  function handleMove(page, direction) {
-    moveSiblingPage(getPages(), page.id, direction);
-    persist();
-    notifyChanged();
+  async function handleMove(page, direction) {
+    await movePageSibling(page, direction);
     rerender();
   }
 
-  function handleArchiveToggle(page) {
-    page.archived = !page.archived;
-    persist();
-    notifyChanged();
+  async function handleArchiveToggle(page) {
+    await setPageArchived(page, !page.archived);
     rerender();
   }
 

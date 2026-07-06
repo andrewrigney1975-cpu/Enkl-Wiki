@@ -1,4 +1,4 @@
-export const CONTENT_PROVIDER = { EMBEDDED: 'embedded', FILESYSTEM: 'filesystem' };
+export const CONTENT_PROVIDER = { EMBEDDED: 'embedded', FILESYSTEM: 'filesystem', RDBMS: 'rdbms' };
 
 export function createDefaultConfig() {
   return {
