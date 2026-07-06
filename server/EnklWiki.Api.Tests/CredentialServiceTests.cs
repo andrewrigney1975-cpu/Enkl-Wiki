@@ -54,7 +54,7 @@ public class CredentialServiceTests
     public void IssueToken_produces_a_non_empty_JWT_with_three_segments()
     {
         var service = CreateService();
-        var token = service.IssueToken();
+        var token = service.IssueToken("editor");
 
         Assert.False(string.IsNullOrWhiteSpace(token));
         Assert.Equal(3, token.Split('.').Length);

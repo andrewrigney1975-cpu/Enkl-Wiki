@@ -24,7 +24,7 @@ composer install --no-dev
    ```
 2. **Configure the app** — copy `config.example.php` to `config.php` and fill in your database DSN, a JWT signing key (`openssl rand -base64 32`), and the origin(s) your static Enkl-Wiki client is served from (CORS is **deny-by-default** here — cross-origin requests are rejected until you explicitly list an allowed origin). Environment variables (`DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `JWT_SIGNING_KEY`, `CORS_ALLOWED_ORIGINS`, `UPLOADS_PATH`) work as an alternative to editing `config.php`, if you'd rather set those on the server directly.
 3. Make sure the configured uploads directory (`storage/uploads` by default) is writable by the webserver's user. It's created automatically on first upload if missing.
-4. The default editor credential (`foobar`, same as every other Enkl-Wiki backing store) is seeded automatically the first time the API receives a request — change it from Site Settings once you've unlocked editing, same as usual.
+4. The default editor (`foobar`) and admin (`siteadmin`) credentials — same as every other Enkl-Wiki backing store — are seeded automatically the first time the API receives a request. The editor credential unlocks page/hierarchy/upload editing; the admin credential unlocks all of that plus Site Settings (title/description, either credential, tag pruning, import). Change either from Site Settings once you've unlocked as an admin.
 
 Only `public/` should be the webserver's document root — everything else (`src/`, `vendor/`, `config.php`, `storage/`) stays outside it, unreachable directly regardless of webserver misconfiguration.
 
@@ -79,7 +79,7 @@ src/Response.php           which is what makes controllers unit-testable
                             without a real HTTP server
 src/Config.php, Db.php   config loading, PDO connection
 src/Cors.php             CORS headers + OPTIONS preflight
-src/Auth/                CredentialService (PBKDF2), Jwt (HS256), AuthMiddleware
+src/Auth/                CredentialService (PBKDF2), Jwt (HS256, role claim), AuthMiddleware (requireEditor/requireAdmin)
 src/Services/            PageHierarchyService (slug/orphan/reorder), TagService
 src/Controllers/         one per resource, mirroring server/EnklWiki.Api/Controllers
 src/Support/             shared read helpers (page/upload JSON shaping, date formatting)
@@ -92,9 +92,10 @@ tests/                   PHPUnit — Services and Controllers, against a real te
 With the app running (`php -S` or a real webserver) against a real Postgres database:
 
 1. `GET /health` → `{"status":"ok"}`.
-2. Log in (`POST /api/auth/login` with `foobar`), confirm a wrong credential gets 401.
-3. Create, edit, reparent (including a rejected cycle), move up/down, archive, and delete (each of the three orphan resolutions) a page — all without a token should 401 on the mutating ones.
+2. Log in (`POST /api/auth/login` with `foobar`), confirm a wrong credential gets 401, and confirm the response's `role` is `"editor"`. Log in with `siteadmin` and confirm `role` is `"admin"`.
+3. Create, edit, reparent (including a rejected cycle), move up/down, archive, and delete (each of the three orphan resolutions) a page — all without a token should 401 on the mutating ones; an editor token should succeed.
 4. Upload a file, download it back, confirm its bytes match.
-5. `POST /api/import` a full site payload, then `GET /api/export` and confirm every body round-trips byte-for-byte.
-6. Change the credential, confirm the old one is rejected and the new one works.
-7. Point a locally-served `dist/index.html` (not `file://` — this needs real HTTP for CORS) at this API via Site Settings, with this origin added to `cors.allowedOrigins`, and confirm the existing rdbms-mode UI works end-to-end with zero client code changes. Open a second browser at the same API and confirm both see the same live data.
+5. With an **editor** token, confirm `PUT /api/site`, `PUT /api/site/credential`, `DELETE /api/tags/unused`, and `POST /api/import` all return 403. With an **admin** token, confirm each succeeds.
+6. `POST /api/import` a full site payload (with an admin token), then `GET /api/export` and confirm every body round-trips byte-for-byte.
+7. Change the editor credential (`role: "editor"`) and the admin credential (`role: "admin"`) separately, confirming each old value is rejected and each new one works, and that changing one doesn't affect the other.
+8. Point a locally-served `dist/index.html` (not `file://` — this needs real HTTP for CORS) at this API via Site Settings, with this origin added to `cors.allowedOrigins`, and confirm the existing rdbms-mode UI works end-to-end with zero client code changes. Open a second browser at the same API and confirm both see the same live data.

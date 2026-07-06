@@ -31,7 +31,11 @@ abstract class TestCase extends BaseTestCase
         ]);
 
         $this->db->exec('TRUNCATE pages, tags, page_tags, uploads RESTART IDENTITY CASCADE');
-        $this->db->exec("UPDATE sites SET title = 'Enkl-Wiki', description = '', credential_salt = NULL, credential_hash = NULL WHERE id = 1");
+        $this->db->exec(
+            "UPDATE sites SET title = 'Enkl-Wiki', description = '', "
+            . 'credential_salt = NULL, credential_hash = NULL, '
+            . 'admin_credential_salt = NULL, admin_credential_hash = NULL WHERE id = 1'
+        );
     }
 
     protected function insertPage(

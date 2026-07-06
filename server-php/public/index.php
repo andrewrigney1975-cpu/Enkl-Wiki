@@ -46,14 +46,22 @@ if (($config['jwt']['signingKey'] ?? '') === '') {
 
 $db = Db::connect($config['db']);
 
-// Seed the default "foobar" editor credential on first request — mirrors
-// the .NET service's startup check, so a freshly migrated database behaves
-// identically to the other two backing stores out of the box.
-$site = $db->query('SELECT credential_salt, credential_hash FROM sites WHERE id = 1')->fetch();
-if ($site !== false && ($site['credential_salt'] === null || $site['credential_hash'] === null)) {
-    $seed = (new CredentialService())->hash('foobar');
-    $db->prepare('UPDATE sites SET credential_salt = :salt, credential_hash = :hash WHERE id = 1')
-        ->execute(['salt' => $seed['salt'], 'hash' => $seed['hash']]);
+// Seed the default "foobar" editor credential and "siteadmin" admin
+// credential on first request — mirrors the .NET service's startup check, so
+// a freshly migrated database behaves identically to the other two backing
+// stores out of the box.
+$site = $db->query('SELECT credential_salt, credential_hash, admin_credential_salt, admin_credential_hash FROM sites WHERE id = 1')->fetch();
+if ($site !== false) {
+    if ($site['credential_salt'] === null || $site['credential_hash'] === null) {
+        $seed = (new CredentialService())->hash('foobar');
+        $db->prepare('UPDATE sites SET credential_salt = :salt, credential_hash = :hash WHERE id = 1')
+            ->execute(['salt' => $seed['salt'], 'hash' => $seed['hash']]);
+    }
+    if ($site['admin_credential_salt'] === null || $site['admin_credential_hash'] === null) {
+        $seed = (new CredentialService())->hash('siteadmin');
+        $db->prepare('UPDATE sites SET admin_credential_salt = :salt, admin_credential_hash = :hash WHERE id = 1')
+            ->execute(['salt' => $seed['salt'], 'hash' => $seed['hash']]);
+    }
 }
 
 $credentialService = new CredentialService();
@@ -74,10 +82,12 @@ $router = new Router();
 $router->add('POST', '/api/auth/login', $authController->login(...));
 
 $router->add('GET', '/api/site', $siteController->get(...));
-$router->add('PUT', '/api/site', $auth->wrap($siteController->update(...)));
-$router->add('PUT', '/api/site/credential', $auth->wrap($siteController->changeCredential(...)));
+// Site title/description, either credential, and tag pruning are all part
+// of Site Settings, so they require the admin credential specifically.
+$router->add('PUT', '/api/site', $auth->wrapAdmin($siteController->update(...)));
+$router->add('PUT', '/api/site/credential', $auth->wrapAdmin($siteController->changeCredential(...)));
 
-$router->add('DELETE', '/api/tags/unused', $auth->wrap($tagsController->deleteUnused(...)));
+$router->add('DELETE', '/api/tags/unused', $auth->wrapAdmin($tagsController->deleteUnused(...)));
 
 $router->add('GET', '/api/pages', $pagesController->getAll(...));
 $router->add('GET', '/api/pages/{id}', $pagesController->getOne(...));
@@ -95,7 +105,9 @@ $router->add('POST', '/api/uploads', $auth->wrap($uploadsController->upload(...)
 $router->add('GET', '/api/uploads/{fileName}', $uploadsController->download(...));
 
 $router->add('GET', '/api/export', $importExportController->export(...));
-$router->add('POST', '/api/import', $auth->wrap($importExportController->import(...)));
+// Only ever invoked from Site Settings on the client, so it requires the
+// admin credential.
+$router->add('POST', '/api/import', $auth->wrapAdmin($importExportController->import(...)));
 
 send($router->dispatch($request));
 

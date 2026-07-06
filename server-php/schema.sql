@@ -12,6 +12,13 @@ CREATE TABLE IF NOT EXISTS sites (
     credential_hash TEXT
 );
 
+-- Separate admin credential — unlocks everything the editor credential does,
+-- plus Site Settings (title/description, either credential, tag pruning, and
+-- import). Added via ALTER rather than inline in CREATE TABLE so re-running
+-- this script against an already-provisioned database upgrades it in place.
+ALTER TABLE sites ADD COLUMN IF NOT EXISTS admin_credential_salt TEXT;
+ALTER TABLE sites ADD COLUMN IF NOT EXISTS admin_credential_hash TEXT;
+
 CREATE TABLE IF NOT EXISTS tags (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL UNIQUE

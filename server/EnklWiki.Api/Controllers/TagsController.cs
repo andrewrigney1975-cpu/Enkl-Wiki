@@ -6,7 +6,8 @@ namespace EnklWiki.Api.Controllers;
 
 [ApiController]
 [Route("api/tags")]
-[Authorize]
+// Tag pruning is only ever invoked from Site Settings on the client.
+[Authorize(Roles = "admin")]
 public class TagsController(TagService tagService) : ControllerBase
 {
     [HttpDelete("unused")]

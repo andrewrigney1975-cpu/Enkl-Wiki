@@ -193,7 +193,9 @@ export async function migrateCurrentSiteTo(newApiBaseUrl, token) {
 
 // Logs into an arbitrary API base URL (not necessarily the one currently
 // connected, if any) — used both by the on-ramp above and by auth-modal.js
-// once already in rdbms mode.
+// once already in rdbms mode. Returns both the token and which credential
+// tier ('editor' | 'admin') it matched, since the server — not the client —
+// is the one that knows which credential was entered.
 export async function loginToApi(newApiBaseUrl, credential) {
   const base = newApiBaseUrl.replace(/\/+$/, '');
   const res = await fetch(`${base}/api/auth/login`, {
@@ -207,7 +209,7 @@ export async function loginToApi(newApiBaseUrl, credential) {
     throw err;
   }
   const data = await res.json();
-  return data.token;
+  return { token: data.token, role: data.role };
 }
 
 export function getPages() {
@@ -348,8 +350,11 @@ export async function saveSiteSettings({ title, description }) {
   notifyChanged();
 }
 
-export async function changeCredential(newCredential) {
-  await apiFetch('/api/site/credential', { method: 'PUT', body: { newCredential } });
+// role is 'editor' or 'admin' — which of the two credentials to replace.
+// Only an admin can call this at all (the server enforces that); an admin
+// can change either credential.
+export async function changeCredential(newCredential, role = 'editor') {
+  await apiFetch('/api/site/credential', { method: 'PUT', body: { newCredential, role } });
 }
 
 export async function removeUnusedTags() {

@@ -32,6 +32,11 @@ public class ApiIntegrationTests
         return body!.Token;
     }
 
+    // Site Settings actions (title/description, either credential, tag
+    // pruning, import) require the admin credential, seeded by default as
+    // "siteadmin" alongside the editor default "foobar".
+    private static Task<string> AdminLoginAsync(HttpClient client) => LoginAsync(client, "siteadmin");
+
     private static void Authorize(HttpClient client, string token) =>
         client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
@@ -63,9 +68,23 @@ public class ApiIntegrationTests
 
         var ok = await client.PostAsJsonAsync("/api/auth/login", new LoginRequestDto("foobar"));
         Assert.Equal(HttpStatusCode.OK, ok.StatusCode);
+        var okBody = await ok.Content.ReadFromJsonAsync<LoginResponseDto>();
+        Assert.Equal("editor", okBody!.Role);
 
         var bad = await client.PostAsJsonAsync("/api/auth/login", new LoginRequestDto("wrong"));
         Assert.Equal(HttpStatusCode.Unauthorized, bad.StatusCode);
+    }
+
+    [Fact]
+    public async Task Login_with_the_admin_credential_returns_the_admin_role()
+    {
+        using var test = NewClient();
+        var client = test.Client;
+
+        var res = await client.PostAsJsonAsync("/api/auth/login", new LoginRequestDto("siteadmin"));
+        Assert.Equal(HttpStatusCode.OK, res.StatusCode);
+        var body = await res.Content.ReadFromJsonAsync<LoginResponseDto>();
+        Assert.Equal("admin", body!.Role);
     }
 
     [Fact]
@@ -188,7 +207,7 @@ public class ApiIntegrationTests
     {
         using var test = NewClient();
         var client = test.Client;
-        Authorize(client, await LoginAsync(client));
+        Authorize(client, await AdminLoginAsync(client));
 
         var importPayload = new ImportSiteDto(
             new ImportSiteInfoDto("Imported Site", "from a test"),
@@ -217,13 +236,25 @@ public class ApiIntegrationTests
     }
 
     [Fact]
-    public async Task Changing_the_credential_takes_effect_for_the_next_login()
+    public async Task Import_with_an_editor_token_is_forbidden()
     {
         using var test = NewClient();
         var client = test.Client;
         Authorize(client, await LoginAsync(client));
 
-        var change = await client.PutAsJsonAsync("/api/site/credential", new ChangeCredentialDto("newpass123"));
+        var payload = new ImportSiteDto(new ImportSiteInfoDto("X", null), [], []);
+        var res = await client.PostAsJsonAsync("/api/import", payload);
+        Assert.Equal(HttpStatusCode.Forbidden, res.StatusCode);
+    }
+
+    [Fact]
+    public async Task Changing_the_credential_takes_effect_for_the_next_login()
+    {
+        using var test = NewClient();
+        var client = test.Client;
+        Authorize(client, await AdminLoginAsync(client));
+
+        var change = await client.PutAsJsonAsync("/api/site/credential", new ChangeCredentialDto("newpass123", "editor"));
         Assert.Equal(HttpStatusCode.NoContent, change.StatusCode);
 
         client.DefaultRequestHeaders.Authorization = null;
@@ -235,11 +266,45 @@ public class ApiIntegrationTests
     }
 
     [Fact]
-    public async Task RemoveUnusedTags_deletes_only_tags_no_page_references()
+    public async Task Changing_the_admin_credential_takes_effect_and_the_editor_credential_still_works()
+    {
+        using var test = NewClient();
+        var client = test.Client;
+        Authorize(client, await AdminLoginAsync(client));
+
+        var change = await client.PutAsJsonAsync("/api/site/credential", new ChangeCredentialDto("newadminpass", "admin"));
+        Assert.Equal(HttpStatusCode.NoContent, change.StatusCode);
+
+        client.DefaultRequestHeaders.Authorization = null;
+        var oldAdminLogin = await client.PostAsJsonAsync("/api/auth/login", new LoginRequestDto("siteadmin"));
+        Assert.Equal(HttpStatusCode.Unauthorized, oldAdminLogin.StatusCode);
+
+        var newAdminLogin = await client.PostAsJsonAsync("/api/auth/login", new LoginRequestDto("newadminpass"));
+        Assert.Equal(HttpStatusCode.OK, newAdminLogin.StatusCode);
+        var newAdminBody = await newAdminLogin.Content.ReadFromJsonAsync<LoginResponseDto>();
+        Assert.Equal("admin", newAdminBody!.Role);
+
+        var editorLogin = await client.PostAsJsonAsync("/api/auth/login", new LoginRequestDto("foobar"));
+        Assert.Equal(HttpStatusCode.OK, editorLogin.StatusCode);
+    }
+
+    [Fact]
+    public async Task Changing_the_credential_with_an_editor_token_is_forbidden()
     {
         using var test = NewClient();
         var client = test.Client;
         Authorize(client, await LoginAsync(client));
+
+        var change = await client.PutAsJsonAsync("/api/site/credential", new ChangeCredentialDto("newpass123", "editor"));
+        Assert.Equal(HttpStatusCode.Forbidden, change.StatusCode);
+    }
+
+    [Fact]
+    public async Task RemoveUnusedTags_deletes_only_tags_no_page_references()
+    {
+        using var test = NewClient();
+        var client = test.Client;
+        Authorize(client, await AdminLoginAsync(client));
 
         await client.PostAsJsonAsync("/api/pages", new CreatePageDto("Page", null, ["used"]));
         // "orphan" only ever exists via import, since page creation always
@@ -259,5 +324,45 @@ public class ApiIntegrationTests
         var site = await client.GetFromJsonAsync<SiteResponseDto>("/api/site");
         Assert.Single(site!.Tags);
         Assert.Equal("used", site.Tags[0].Name);
+    }
+
+    [Fact]
+    public async Task RemoveUnusedTags_with_an_editor_token_is_forbidden()
+    {
+        using var test = NewClient();
+        var client = test.Client;
+        Authorize(client, await LoginAsync(client));
+
+        var res = await client.DeleteAsync("/api/tags/unused");
+        Assert.Equal(HttpStatusCode.Forbidden, res.StatusCode);
+    }
+
+    [Fact]
+    public async Task Updating_site_title_with_an_editor_token_is_forbidden_but_an_admin_token_succeeds()
+    {
+        using var test = NewClient();
+        var client = test.Client;
+        Authorize(client, await LoginAsync(client));
+
+        var forbidden = await client.PutAsJsonAsync("/api/site", new SiteUpdateDto("New Title", "New Description"));
+        Assert.Equal(HttpStatusCode.Forbidden, forbidden.StatusCode);
+
+        Authorize(client, await AdminLoginAsync(client));
+        var ok = await client.PutAsJsonAsync("/api/site", new SiteUpdateDto("New Title", "New Description"));
+        Assert.Equal(HttpStatusCode.NoContent, ok.StatusCode);
+
+        var site = await client.GetFromJsonAsync<SiteResponseDto>("/api/site");
+        Assert.Equal("New Title", site!.Title);
+    }
+
+    [Fact]
+    public async Task An_editor_token_can_still_create_and_edit_pages()
+    {
+        using var test = NewClient();
+        var client = test.Client;
+        Authorize(client, await LoginAsync(client));
+
+        var res = await client.PostAsJsonAsync("/api/pages", new CreatePageDto("Editor Page", null, null));
+        Assert.Equal(HttpStatusCode.Created, res.StatusCode);
     }
 }

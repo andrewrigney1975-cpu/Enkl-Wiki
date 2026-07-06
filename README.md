@@ -21,7 +21,12 @@ Runs the jsdom-based unit, feature, and smoke tests under `tests/`.
 
 ## Editing
 
-The default editor credential is `***************` — click the lock icon in the header to unlock page, hierarchy, and upload editing. Change it from Site Settings once unlocked.
+Click the lock icon in the header and enter a credential to unlock editing. There are two tiers, sharing the same unlock flow:
+
+- **Editor** (default `foobar`) unlocks page, hierarchy, and upload editing.
+- **Admin** (default `siteadmin`) unlocks all of that, plus the Site Settings icon (site title/description, either credential, tag pruning, and import/export).
+
+Change either credential from Site Settings once unlocked as an admin.
 
 ## Shared Database Backing Store (optional)
 

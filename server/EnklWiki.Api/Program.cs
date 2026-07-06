@@ -66,8 +66,8 @@ var app = builder.Build();
 
 // Apply pending migrations on startup — simplest option for a self-hosted /
 // docker-compose deployment with no separate migration step. Also seeds the
-// default "foobar" editor credential on first run, matching the client-only
-// modes' default (src/auth/credential.js).
+// default "foobar" editor credential and "siteadmin" admin credential on
+// first run, matching the client-only modes' defaults (src/auth/credential.js).
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -77,13 +77,27 @@ using (var scope = app.Services.CreateScope())
     else db.Database.EnsureCreated();
 
     var site = await db.Sites.FindAsync(1);
-    if (site is not null && (site.CredentialSalt is null || site.CredentialHash is null))
+    if (site is not null)
     {
         var credentialService = scope.ServiceProvider.GetRequiredService<CredentialService>();
-        var (salt, hash) = credentialService.HashCredential("foobar");
-        site.CredentialSalt = salt;
-        site.CredentialHash = hash;
-        await db.SaveChangesAsync();
+        var changed = false;
+
+        if (site.CredentialSalt is null || site.CredentialHash is null)
+        {
+            var (salt, hash) = credentialService.HashCredential("foobar");
+            site.CredentialSalt = salt;
+            site.CredentialHash = hash;
+            changed = true;
+        }
+        if (site.AdminCredentialSalt is null || site.AdminCredentialHash is null)
+        {
+            var (salt, hash) = credentialService.HashCredential("siteadmin");
+            site.AdminCredentialSalt = salt;
+            site.AdminCredentialHash = hash;
+            changed = true;
+        }
+
+        if (changed) await db.SaveChangesAsync();
     }
 }
 

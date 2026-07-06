@@ -44,6 +44,11 @@ final class Response
         return new self(401, ['error' => $message]);
     }
 
+    public static function forbidden(string $message = 'Forbidden'): self
+    {
+        return new self(403, ['error' => $message]);
+    }
+
     public static function serverError(string $message): self
     {
         return new self(500, ['error' => $message]);

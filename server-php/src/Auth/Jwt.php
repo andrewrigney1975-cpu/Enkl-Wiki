@@ -25,22 +25,25 @@ final class Jwt
     {
     }
 
-    public function issue(): string
+    public function issue(string $role): string
     {
         $now = time();
         return FirebaseJwt::encode([
             'iss' => self::ISSUER,
             'aud' => self::AUDIENCE,
-            'role' => 'editor',
+            'role' => $role,
             'iat' => $now,
             'exp' => $now + self::TTL_SECONDS,
         ], $this->signingKey, 'HS256');
     }
 
-    public function verify(?string $token): bool
+    // Returns the token's role claim ('editor' | 'admin') if the token is
+    // valid, or null otherwise — null lets a caller distinguish "no valid
+    // token" (401) from "valid token, wrong role" (403).
+    public function verify(?string $token): ?string
     {
         if (!$token) {
-            return false;
+            return null;
         }
 
         try {
@@ -48,11 +51,14 @@ final class Jwt
         } catch (ExpiredException|BeforeValidException|SignatureInvalidException|UnexpectedValueException) {
             // Anything else (e.g. an empty signing key) is a deployment
             // misconfiguration, not an invalid token — let it propagate.
-            return false;
+            return null;
         }
 
-        return ($decoded->iss ?? null) === self::ISSUER
-            && ($decoded->aud ?? null) === self::AUDIENCE
-            && ($decoded->role ?? null) === 'editor';
+        if (($decoded->iss ?? null) !== self::ISSUER || ($decoded->aud ?? null) !== self::AUDIENCE) {
+            return null;
+        }
+
+        $role = $decoded->role ?? null;
+        return is_string($role) ? $role : null;
     }
 }

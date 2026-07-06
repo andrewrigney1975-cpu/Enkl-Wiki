@@ -14,10 +14,10 @@ docker compose up --build
 This builds and runs three containers:
 
 - **`db`** — PostgreSQL 16, with a named volume so data survives restarts.
-- **`api`** — this API, applying EF Core migrations automatically on startup and seeding the default `foobar` editor credential on first run. Uploaded files are stored in a named volume.
+- **`api`** — this API, applying EF Core migrations automatically on startup and seeding the default `foobar` editor and `siteadmin` admin credentials on first run. Uploaded files are stored in a named volume.
 - **`web`** — the built client (`npm run build`'s `dist/`) served by nginx, which also reverse-proxies `/api/*` to the `api` container. Because the browser and API are on the same origin through this proxy, there's no CORS configuration to worry about.
 
-Open **http://localhost:8080**, unlock editing (`foobar`), open **Site Settings**, and switch **Page content storage** to *Shared database (via API)*. Leave the **API Base URL** field blank (the proxy handles it) and choose whether to migrate your current site's content in.
+Open **http://localhost:8080**, unlock editing (`foobar` for editor, or `siteadmin` for admin — the admin tier also reveals Site Settings), open **Site Settings**, and switch **Page content storage** to *Shared database (via API)*. Leave the **API Base URL** field blank (the proxy handles it) and choose whether to migrate your current site's content in.
 
 `docker compose down` stops the stack; add `-v` to also delete the database/uploads volumes.
 
@@ -62,6 +62,6 @@ Runs `EnklWiki.Api.Tests` — xUnit unit tests for `PageHierarchyService`/`TagSe
 
 ## Notes
 
-- Auth is a single shared editor credential (like the client-only modes), verified server-side and exchanged for a short-lived JWT. Reads are always public; only mutations require the token.
+- Auth is two shared credentials — editor (`foobar` default) and admin (`siteadmin` default), like the client-only modes — verified server-side and exchanged for a short-lived JWT carrying a `role` claim. Reads are always public; page/hierarchy/upload mutations require either role; site title/description, changing either credential, tag pruning, and import require the admin role specifically (`[Authorize(Roles = "admin")]`).
 - Page bodies are fetched lazily per page (`GET/PUT /api/pages/{id}/body`), the same pattern the filesystem-backed mode uses for `.md` files.
 - `POST /api/import` / `GET /api/export` are the full-fidelity migrate-in / back-up-out endpoints used by the client's "migrate existing site" on-ramp and its Export Data button.

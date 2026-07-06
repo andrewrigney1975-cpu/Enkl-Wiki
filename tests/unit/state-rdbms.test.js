@@ -74,7 +74,7 @@ function installFakeApi() {
     if (method === 'POST' && path === '/api/auth/login') {
       const { credential } = JSON.parse(options.body);
       if (credential !== 'foobar') return { ok: false, status: 401 };
-      return { ok: true, status: 200, json: async () => ({ token: 'fake-jwt' }) };
+      return { ok: true, status: 200, json: async () => ({ token: 'fake-jwt', role: 'editor' }) };
     }
     if (method === 'POST' && path === '/api/uploads') {
       const upload = { id: 'u1', fileName: 'stored.png', originalFileName: 'x.png', contentType: 'image/png', size: 3, createdAt: '2026-01-01T00:00:00Z' };
@@ -156,8 +156,9 @@ test('loginToApi resolves a token on success and rejects with status 401 on a wr
   const { restore } = installFakeApi();
 
   const state = await import('../../src/app/state.js');
-  const token = await state.loginToApi(API, 'foobar');
+  const { token, role } = await state.loginToApi(API, 'foobar');
   assert.equal(token, 'fake-jwt');
+  assert.equal(role, 'editor');
 
   await assert.rejects(() => state.loginToApi(API, 'wrong'), (err) => err.status === 401);
 

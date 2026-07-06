@@ -39,7 +39,9 @@ public class ImportExportController(AppDbContext db) : ControllerBase
     // Tags and pages are fully replaced; uploads are left untouched since no
     // binary content travels in this JSON payload (existing embedded/
     // filesystem uploads referenced by imported pages must be re-uploaded).
-    [Authorize]
+    // Only ever invoked from Site Settings on the client, so it requires the
+    // admin credential.
+    [Authorize(Roles = "admin")]
     [HttpPost("api/import")]
     public async Task<IActionResult> Import(ImportSiteDto request)
     {

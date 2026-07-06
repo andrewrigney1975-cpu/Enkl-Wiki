@@ -35,7 +35,7 @@ public class CredentialService(IConfiguration configuration)
     private static byte[] DeriveHash(string secret, byte[] salt) =>
         Rfc2898DeriveBytes.Pbkdf2(Encoding.UTF8.GetBytes(secret), salt, Iterations, HashAlgorithmName.SHA256, HashBytes);
 
-    public string IssueToken()
+    public string IssueToken(string role)
     {
         var signingKey = configuration["Jwt:SigningKey"]
             ?? throw new InvalidOperationException("Jwt:SigningKey is not configured.");
@@ -45,7 +45,7 @@ public class CredentialService(IConfiguration configuration)
         var token = new JwtSecurityToken(
             issuer: "enkl-wiki-api",
             audience: "enkl-wiki-client",
-            claims: [new Claim(ClaimTypes.Role, "editor")],
+            claims: [new Claim(ClaimTypes.Role, role)],
             expires: DateTime.UtcNow.AddHours(12),
             signingCredentials: creds
         );

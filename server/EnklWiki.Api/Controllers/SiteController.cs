@@ -34,7 +34,9 @@ public class SiteController(AppDbContext db, CredentialService credentialService
         return Ok(new SiteResponseDto(site.Title, site.Description, tags, pages, uploads));
     }
 
-    [Authorize]
+    // Site title/description is part of Site Settings, so it requires the
+    // admin credential, same as the client-only modes' icon gating.
+    [Authorize(Roles = "admin")]
     [HttpPut]
     public async Task<IActionResult> Update(SiteUpdateDto request)
     {
@@ -49,8 +51,10 @@ public class SiteController(AppDbContext db, CredentialService credentialService
 
     // Gated by the JWT obtained at login (POST /api/auth/login) — that
     // already proves knowledge of the current credential, so it isn't asked
-    // for again here, matching the client-only modes' simplicity.
-    [Authorize]
+    // for again here, matching the client-only modes' simplicity. Only an
+    // admin can call this at all; which of the two credentials gets replaced
+    // is selected by request.Role.
+    [Authorize(Roles = "admin")]
     [HttpPut("credential")]
     public async Task<IActionResult> ChangeCredential(ChangeCredentialDto request)
     {
@@ -58,8 +62,16 @@ public class SiteController(AppDbContext db, CredentialService credentialService
         if (site is null) return NotFound();
 
         var (salt, hash) = credentialService.HashCredential(request.NewCredential);
-        site.CredentialSalt = salt;
-        site.CredentialHash = hash;
+        if (request.Role == "admin")
+        {
+            site.AdminCredentialSalt = salt;
+            site.AdminCredentialHash = hash;
+        }
+        else
+        {
+            site.CredentialSalt = salt;
+            site.CredentialHash = hash;
+        }
         await db.SaveChangesAsync();
         return NoContent();
     }

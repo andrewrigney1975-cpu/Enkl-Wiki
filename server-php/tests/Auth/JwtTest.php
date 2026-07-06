@@ -9,21 +9,21 @@ use PHPUnit\Framework\TestCase;
 
 final class JwtTest extends TestCase
 {
-    public function testIssuedTokenVerifiesSuccessfully(): void
+    public function testIssuedTokenVerifiesSuccessfullyAndCarriesItsRole(): void
     {
         $jwt = new Jwt('test-signing-key-at-least-32-bytes-long!!');
-        $token = $jwt->issue();
 
-        self::assertTrue($jwt->verify($token));
+        self::assertSame('editor', $jwt->verify($jwt->issue('editor')));
+        self::assertSame('admin', $jwt->verify($jwt->issue('admin')));
     }
 
     public function testVerifyRejectsGarbageOrNullTokens(): void
     {
         $jwt = new Jwt('test-signing-key-at-least-32-bytes-long!!');
 
-        self::assertFalse($jwt->verify('garbage'));
-        self::assertFalse($jwt->verify(null));
-        self::assertFalse($jwt->verify(''));
+        self::assertNull($jwt->verify('garbage'));
+        self::assertNull($jwt->verify(null));
+        self::assertNull($jwt->verify(''));
     }
 
     public function testVerifyRejectsATokenSignedWithADifferentKey(): void
@@ -31,7 +31,7 @@ final class JwtTest extends TestCase
         $issuer = new Jwt('key-one-at-least-32-bytes-long-for-hs256');
         $verifier = new Jwt('key-two-at-least-32-bytes-long-for-hs256');
 
-        self::assertFalse($verifier->verify($issuer->issue()));
+        self::assertNull($verifier->verify($issuer->issue('editor')));
     }
 
     public function testVerifyRejectsAnExpiredToken(): void
@@ -43,6 +43,6 @@ final class JwtTest extends TestCase
             'iat' => time() - 100, 'exp' => time() - 50,
         ], $key, 'HS256');
 
-        self::assertFalse((new Jwt($key))->verify($expired));
+        self::assertNull((new Jwt($key))->verify($expired));
     }
 }

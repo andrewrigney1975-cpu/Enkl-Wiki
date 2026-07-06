@@ -53,7 +53,10 @@ final class SiteController
 
     // Gated by the JWT obtained at login (POST /api/auth/login) — that
     // already proves knowledge of the current credential, so it isn't asked
-    // for again here, matching the client-only modes' simplicity.
+    // for again here, matching the client-only modes' simplicity. Only an
+    // admin can call this at all (enforced by AuthMiddleware::requireAdmin
+    // in public/index.php); which of the two credentials gets replaced is
+    // selected by the "role" field.
     public function changeCredential(Request $request): Response
     {
         $newCredential = (string) $request->json('newCredential', '');
@@ -61,8 +64,14 @@ final class SiteController
             return Response::badRequest('newCredential is required.');
         }
 
+        $role = (string) $request->json('role', 'editor');
         $hashed = $this->credentials->hash($newCredential);
-        $stmt = $this->db->prepare('UPDATE sites SET credential_salt = :salt, credential_hash = :hash WHERE id = 1');
+
+        if ($role === 'admin') {
+            $stmt = $this->db->prepare('UPDATE sites SET admin_credential_salt = :salt, admin_credential_hash = :hash WHERE id = 1');
+        } else {
+            $stmt = $this->db->prepare('UPDATE sites SET credential_salt = :salt, credential_hash = :hash WHERE id = 1');
+        }
         $stmt->execute(['salt' => $hashed['salt'], 'hash' => $hashed['hash']]);
 
         return Response::noContent();

@@ -20,11 +20,19 @@ public class AuthController(AppDbContext db, CredentialService credentialService
             return Problem("Site credential is not configured.", statusCode: StatusCodes.Status500InternalServerError);
         }
 
+        // Admin is checked first so a credential that (unusually) matches
+        // both isn't mistaken for the lower tier.
+        if (site.AdminCredentialSalt is not null && site.AdminCredentialHash is not null
+            && credentialService.VerifyCredential(request.Credential, site.AdminCredentialSalt, site.AdminCredentialHash))
+        {
+            return Ok(new LoginResponseDto(credentialService.IssueToken("admin"), "admin"));
+        }
+
         if (!credentialService.VerifyCredential(request.Credential, site.CredentialSalt, site.CredentialHash))
         {
             return Unauthorized();
         }
 
-        return Ok(new LoginResponseDto(credentialService.IssueToken()));
+        return Ok(new LoginResponseDto(credentialService.IssueToken("editor"), "editor"));
     }
 }

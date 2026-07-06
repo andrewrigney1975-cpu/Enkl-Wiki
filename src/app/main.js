@@ -5,7 +5,7 @@ import { showAuthModal } from '../ui/auth-modal.js';
 import { showPageEditorModal } from '../ui/page-editor-modal.js';
 import { showHierarchyModal } from '../ui/hierarchy-modal.js';
 import { showSiteSettingsModal } from '../ui/site-settings-modal.js';
-import { isUnlocked, setUnlocked, setAuthToken } from '../auth/credential.js';
+import { isUnlocked, isAdmin, setUnlocked, setAdmin, setAuthToken } from '../auth/credential.js';
 import {
   initState, getConfig, getProvider, getPages, getTags, findPageBySlug, firstVisiblePage, subscribe, exportSiteData
 } from './state.js';
@@ -78,12 +78,15 @@ export async function renderApp(root) {
     lockBtn.innerHTML = iconMarkup(unlocked ? 'unlock' : 'lock', 16);
     lockBtn.title = unlocked ? 'Editing unlocked (click to lock)' : 'Unlock editing';
     lockBtn.setAttribute('aria-label', lockBtn.title);
-    settingsBtn.classList.toggle('ek-hidden', !unlocked);
+    // Site Settings needs the admin credential specifically — the editor
+    // credential unlocks page/hierarchy/upload editing only.
+    settingsBtn.classList.toggle('ek-hidden', !isAdmin());
   }
 
   function handleToggleLock() {
     if (isUnlocked()) {
       setUnlocked(false);
+      setAdmin(false);
       setAuthToken(null);
       refreshLockBtn();
       renderCurrentRoute();

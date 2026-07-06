@@ -7,7 +7,11 @@ export function createDefaultConfig() {
       contentBackingProvider: CONTENT_PROVIDER.EMBEDDED,
       // Populated on first run by the auth module (default credential "foobar").
       credentialSalt: null,
-      credentialHash: null
+      credentialHash: null,
+      // Separate admin credential (default "siteadmin") — unlocks everything
+      // the editor credential does, plus Site Settings.
+      adminCredentialSalt: null,
+      adminCredentialHash: null
     },
     tags: [],
     pages: [],

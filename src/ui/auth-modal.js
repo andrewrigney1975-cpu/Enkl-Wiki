@@ -1,12 +1,12 @@
 import { openModal } from './modal.js';
-import { verifyCredential, setUnlocked, setAuthToken } from '../auth/credential.js';
+import { verifyCredentialTier, setUnlocked, setAdmin, setAuthToken } from '../auth/credential.js';
 import { isRdbmsMode, getApiBaseUrl, loginToApi } from '../app/state.js';
 
 export function showAuthModal({ config, onUnlocked } = {}) {
   const body = document.createElement('div');
   body.innerHTML = `
     <p style="margin:0 0 14px;color:var(--ek-text);font-size:13px;line-height:1.6;">
-      Enter the editor credential to unlock page and hierarchy editing.
+      Enter a credential to unlock page and hierarchy editing. The admin credential also unlocks Site Settings.
     </p>
     <div class="ek-field">
       <label for="ekAuthInput">Credential</label>
@@ -43,27 +43,30 @@ export function showAuthModal({ config, onUnlocked } = {}) {
     input.focus();
   }
 
+  function unlockAs(tier) {
+    setUnlocked(true);
+    setAdmin(tier === 'admin');
+    handle.close();
+    if (onUnlocked) onUnlocked();
+  }
+
   async function attempt() {
     const secret = input.value;
 
     if (isRdbmsMode()) {
       try {
-        const token = await loginToApi(getApiBaseUrl(), secret);
+        const { token, role } = await loginToApi(getApiBaseUrl(), secret);
         setAuthToken(token);
-        setUnlocked(true);
-        handle.close();
-        if (onUnlocked) onUnlocked();
+        unlockAs(role);
       } catch (err) {
         showInvalid(err.status === 401 ? 'That credential is not correct.' : (err.message || 'Could not reach the API.'));
       }
       return;
     }
 
-    const ok = await verifyCredential(secret, config.settings.credentialSalt, config.settings.credentialHash);
-    if (ok) {
-      setUnlocked(true);
-      handle.close();
-      if (onUnlocked) onUnlocked();
+    const tier = await verifyCredentialTier(secret, config);
+    if (tier) {
+      unlockAs(tier);
     } else {
       showInvalid('That credential is not correct.');
     }

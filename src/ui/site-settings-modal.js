@@ -22,10 +22,10 @@ function promptForTargetCredential(apiDescription) {
     const body = document.createElement('div');
     body.innerHTML = `
       <p style="margin:0 0 14px;color:var(--ek-text);font-size:13px;line-height:1.6;">
-        Enter the editor credential for the database at ${apiDescription} (a fresh database's default is "foobar").
+        Enter the <strong>admin</strong> credential for the database at ${apiDescription} (a fresh database's default is "siteadmin"). Migrating replaces its entire contents, so it requires admin rather than editor access.
       </p>
       <div class="ek-field">
-        <label for="ekMigrateCredInput">Credential</label>
+        <label for="ekMigrateCredInput">Admin credential</label>
         <input type="password" id="ekMigrateCredInput" autocomplete="current-password">
       </div>
     `;
@@ -135,6 +135,17 @@ export function showSiteSettingsModal() {
   newCredInput.placeholder = 'Leave blank to keep the current credential';
   credField.appendChild(newCredInput);
 
+  const adminCredField = document.createElement('div');
+  adminCredField.className = 'ek-field';
+  adminCredField.innerHTML = '<label for="ekNewAdminCredInput">Change admin credential</label>'
+    + '<div class="ek-hint">The admin credential unlocks Site Settings in addition to editing.</div>';
+  const newAdminCredInput = document.createElement('input');
+  newAdminCredInput.type = 'password';
+  newAdminCredInput.id = 'ekNewAdminCredInput';
+  newAdminCredInput.autocomplete = 'new-password';
+  newAdminCredInput.placeholder = 'Leave blank to keep the current credential';
+  adminCredField.appendChild(newAdminCredInput);
+
   const tagsField = document.createElement('div');
   tagsField.className = 'ek-field';
   const stale = unusedTags(config.tags, config.pages);
@@ -219,7 +230,7 @@ export function showSiteSettingsModal() {
   const errorBox = document.createElement('div');
   errorBox.className = 'ek-field-error ek-hidden';
 
-  body.append(titleField, descField, providerField, apiUrlField, credField, tagsField, dataField, errorBox);
+  body.append(titleField, descField, providerField, apiUrlField, credField, adminCredField, tagsField, dataField, errorBox);
 
   const cancelBtn = document.createElement('button');
   cancelBtn.type = 'button';
@@ -272,7 +283,10 @@ export function showSiteSettingsModal() {
       saveBtn.disabled = true;
       try {
         if (migrate) {
-          const token = await loginToApi(apiBaseUrl, credential);
+          const { token, role } = await loginToApi(apiBaseUrl, credential);
+          if (role !== 'admin') {
+            throw new Error('Migrating requires that database\'s admin credential, not its editor credential.');
+          }
           await migrateCurrentSiteTo(apiBaseUrl, token);
         }
         connectToRdbms(apiBaseUrl);
@@ -297,7 +311,8 @@ export function showSiteSettingsModal() {
       // in place, no reload needed.
       try {
         await saveSiteSettings({ title: titleInput.value.trim() || 'Enkl-Wiki', description: descInput.value });
-        if (newCredInput.value.trim()) await changeCredential(newCredInput.value.trim());
+        if (newCredInput.value.trim()) await changeCredential(newCredInput.value.trim(), 'editor');
+        if (newAdminCredInput.value.trim()) await changeCredential(newAdminCredInput.value.trim(), 'admin');
       } catch (err) {
         showError(err.message || 'Could not save site settings.');
         return;
@@ -314,6 +329,12 @@ export function showSiteSettingsModal() {
       const { salt, hash } = await hashCredential(newCredInput.value.trim());
       config.settings.credentialSalt = salt;
       config.settings.credentialHash = hash;
+    }
+
+    if (newAdminCredInput.value.trim()) {
+      const { salt, hash } = await hashCredential(newAdminCredInput.value.trim());
+      config.settings.adminCredentialSalt = salt;
+      config.settings.adminCredentialHash = hash;
     }
 
     persist();
