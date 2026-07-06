@@ -146,11 +146,26 @@
   font-size: 13px;
 }
 
+/* Page content + the "on this page" TOC sit side by side as a two-column
+   layout, mirroring a typical documentation page — but only on wide
+   viewports; see the max-width:1279px override below. */
+.ek-page-view-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 40px;
+  background: var(--ek-surface);
+}
+
+.ek-page-view-layout .ek-page {
+  flex: 1;
+}
+
 .ek-page {
   min-width: 600px;
   max-width: 1440px;
   margin: 0;
   padding: 32px 28px 60px;
+  background: var(--ek-surface);
 }
 
 .ek-page-title-row {
@@ -247,6 +262,68 @@
   text-align: left;
 }
 
+/* Right-hand "on this page" TOC — generated from the current page's h2/h3
+   headings; hidden entirely when a page has none (see page-view.js). */
+.ek-toc-pane {
+  width: 200px;
+  min-width: 200px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  padding: 32px 0;
+}
+
+.ek-toc-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--ek-text-faint);
+  margin-bottom: 10px;
+}
+
+.ek-toc-list {
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--ek-border);
+}
+
+.ek-toc-link {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  display: block;
+  width: 100%;
+  padding: 5px 0 5px 14px;
+  margin-left: -1px;
+  border-left: 1.5px solid transparent;
+  color: var(--ek-text-secondary);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.ek-toc-link-sub {
+  padding-left: 26px;
+  font-size: 12.5px;
+}
+
+.ek-toc-link:hover {
+  color: var(--ek-text);
+}
+
+.ek-toc-link.active {
+  color: var(--ek-blue);
+  border-left-color: var(--ek-blue);
+  font-weight: 600;
+}
+
+@media (max-width: 1279px) {
+  .ek-toc-pane {
+    display: none;
+  }
+}
+
 /* Below this width, the page tree becomes a slide-out drawer opened via the
    hamburger button, rather than a permanently docked column — there isn't
    room for toolstrip + tree + content side by side on a phone screen. */
@@ -293,6 +370,7 @@
   .ek-page {
     min-width: 0; /* the 600px desktop floor would force horizontal scrolling here */
     padding: 24px 16px 40px;
+    background: var(--ek-surface);
   }
 }
 

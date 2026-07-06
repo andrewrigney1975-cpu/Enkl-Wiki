@@ -1,14 +1,89 @@
 import { renderMarkdown } from '../content/markdown.js';
 import { tagNamesForIds } from '../content/tag-model.js';
 import { exportPageAsHtml } from '../content/page-export.js';
+import { slugify } from '../content/page-model.js';
 import { iconMarkup } from './icons.js';
 
 // Guards against a slow provider.getPageBody() resolving after the user has
 // already navigated elsewhere — only the most recently requested render wins.
 let renderCounter = 0;
 
+// Cleans up the previous page's scroll listener before a new one is
+// attached — renderPageView reuses the same container element across
+// navigations (only its innerHTML is replaced), so listeners added directly
+// to it would otherwise stack up indefinitely.
+let cleanupTocScrollListener = null;
+
+// Assigns a stable, unique id to each h2/h3 in the rendered body and returns
+// the outline used to build the "on this page" panel — mirroring the table
+// of contents a documentation site generates from its own headings.
+function buildTocOutline(contentEl) {
+  const headings = [...contentEl.querySelectorAll('h2, h3')];
+  const seen = new Set();
+  return headings.map((el) => {
+    const base = slugify(el.textContent) || 'section';
+    let id = base;
+    let i = 2;
+    while (seen.has(id)) id = `${base}-${i++}`;
+    seen.add(id);
+    el.id = id;
+    return { el, text: el.textContent, level: el.tagName === 'H3' ? 3 : 2 };
+  });
+}
+
+function renderTocPane(outline, scrollContainer) {
+  const aside = document.createElement('aside');
+  aside.className = 'ek-toc-pane';
+
+  const title = document.createElement('div');
+  title.className = 'ek-toc-title';
+  title.textContent = 'On this page';
+
+  const nav = document.createElement('nav');
+  nav.className = 'ek-toc-list';
+
+  const links = outline.map((item) => {
+    const link = document.createElement('button');
+    link.type = 'button';
+    link.className = 'ek-toc-link' + (item.level === 3 ? ' ek-toc-link-sub' : '');
+    link.textContent = item.text;
+    // A real `href="#id"` would collide with the app's own #!/slug hashbang
+    // router, so navigation is done imperatively instead.
+    link.addEventListener('click', () => {
+      item.el.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+    });
+    return { link, item };
+  });
+
+  nav.append(...links.map((l) => l.link));
+  aside.append(title, nav);
+
+  // Highlights whichever heading is currently nearest the top of the
+  // scrolling viewport — a lightweight scrollspy that doesn't depend on
+  // IntersectionObserver (not implemented in the jsdom test environment).
+  function updateActiveLink() {
+    const containerTop = scrollContainer.getBoundingClientRect().top;
+    let current = null;
+    for (const { item } of links) {
+      if (item.el.getBoundingClientRect().top - containerTop <= 80) current = item;
+    }
+    for (const { link, item } of links) {
+      link.classList.toggle('active', item === current);
+    }
+  }
+
+  scrollContainer.addEventListener('scroll', updateActiveLink);
+  cleanupTocScrollListener = () => scrollContainer.removeEventListener('scroll', updateActiveLink);
+  updateActiveLink();
+
+  return aside;
+}
+
 export async function renderPageView(container, { page, provider, tags = [] } = {}) {
   const token = ++renderCounter;
+
+  cleanupTocScrollListener?.();
+  cleanupTocScrollListener = null;
 
   if (!page) {
     container.innerHTML = '<div class="ek-placeholder">No page selected yet.</div>';
@@ -75,5 +150,14 @@ export async function renderPageView(container, { page, provider, tags = [] } = 
 
   exportBtn.addEventListener('click', () => exportPageAsHtml(page, content.innerHTML));
 
-  container.appendChild(article);
+  const outline = buildTocOutline(content);
+  if (outline.length) {
+    const layout = document.createElement('div');
+    layout.className = 'ek-page-view-layout';
+    layout.appendChild(article);
+    layout.appendChild(renderTocPane(outline, container));
+    container.appendChild(layout);
+  } else {
+    container.appendChild(article);
+  }
 }
