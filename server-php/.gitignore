@@ -1,0 +1,4 @@
+/vendor/
+/config.php
+/storage/uploads/
+.phpunit.result.cache

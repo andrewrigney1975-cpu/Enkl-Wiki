@@ -1,0 +1,12 @@
+RewriteEngine On
+
+# Serve real files/directories (none expected under public/ besides this
+# file) as-is; route everything else through the front controller.
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.php [QSA,L]
+
+# Some Apache/CGI setups strip the Authorization header unless told to keep it.
+<IfModule mod_setenvif.c>
+    SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
+</IfModule>

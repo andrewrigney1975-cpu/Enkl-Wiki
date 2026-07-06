@@ -1,0 +1,27 @@
+{
+    "name": "enkl-wiki/api-php",
+    "description": "Alternative PHP + PostgreSQL implementation of the Enkl-Wiki shared-database API, for non-containerized deployment.",
+    "type": "project",
+    "license": "MIT",
+    "require": {
+        "php": ">=8.1",
+        "ext-pdo": "*",
+        "ext-pdo_pgsql": "*",
+        "ext-json": "*",
+        "ext-intl": "*",
+        "firebase/php-jwt": "^7.1"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "EnklWiki\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "EnklWiki\\Tests\\": "tests/"
+        }
+    }
+}
