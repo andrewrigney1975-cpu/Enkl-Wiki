@@ -59,6 +59,7 @@
 
 /* Markdown editor */
 .ek-md-editor {
+  position: relative; /* anchors the floating per-table width toolbar below */
   display: flex;
   flex-direction: column;
   border: 2px solid var(--ek-border);
@@ -190,6 +191,41 @@
 .ek-md-wysiwyg:focus {
   outline: none;
   background: var(--ek-input-bg-focus);
+}
+
+/* Floating per-table width toolbar (see markdown-editor.js) */
+.ek-table-toolbar {
+  position: absolute;
+  z-index: 20;
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--ek-surface);
+  border: 1px solid var(--ek-border-strong);
+  border-radius: var(--ek-radius);
+  box-shadow: var(--ek-shadow-hover);
+}
+
+.ek-table-toolbar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: none;
+  border: none;
+  border-radius: 3px;
+  color: var(--ek-text-secondary);
+}
+
+.ek-table-toolbar-btn:hover {
+  background: var(--ek-hover-tint);
+  color: var(--ek-text);
+}
+
+.ek-table-toolbar-btn.active {
+  background: var(--ek-blue);
+  color: #fff;
 }
 
 .ek-md-raw {

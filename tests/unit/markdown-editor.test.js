@@ -134,6 +134,89 @@ test('a Markdown table survives a render -> WYSIWYG -> serialize round trip', ()
   teardownDom();
 });
 
+// Places the caret inside `node` and dispatches a click on it, the same
+// pair of signals a real click in the editor produces (a browser both moves
+// the selection and fires the click event).
+function clickInside(node) {
+  const range = document.createRange();
+  range.selectNodeContents(node);
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+  node.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+}
+
+test('clicking inside a table reveals the floating width toolbar; clicking outside hides it', () => {
+  setupDom();
+  const editor = createMarkdownEditor({ initialValue: '| A |\n| --- |\n| 1 |' });
+  document.body.appendChild(editor.root); // selection/Range behavior needs the node attached to the document
+  const cell = editor.root.querySelector('.ek-md-wysiwyg td, .ek-md-wysiwyg th');
+  const tableToolbar = editor.root.querySelector('.ek-table-toolbar');
+  assert.ok(tableToolbar.classList.contains('ek-hidden'));
+
+  clickInside(cell);
+  assert.ok(!tableToolbar.classList.contains('ek-hidden'));
+
+  document.body.click();
+  assert.ok(tableToolbar.classList.contains('ek-hidden'));
+
+  teardownDom();
+});
+
+test('the full-width toolbar button marks the table full width and getValue() includes the marker', () => {
+  setupDom();
+  const editor = createMarkdownEditor({ initialValue: '| A |\n| --- |\n| 1 |' });
+  document.body.appendChild(editor.root);
+  const cell = editor.root.querySelector('.ek-md-wysiwyg td, .ek-md-wysiwyg th');
+  clickInside(cell);
+
+  const table = editor.root.querySelector('.ek-md-wysiwyg table');
+  const [responsiveBtn, fullWidthBtn] = editor.root.querySelectorAll('.ek-table-toolbar-btn');
+  assert.ok(responsiveBtn.classList.contains('active'));
+  assert.ok(!fullWidthBtn.classList.contains('active'));
+
+  fullWidthBtn.click();
+  assert.ok(table.classList.contains('ek-table-full'));
+  assert.ok(fullWidthBtn.classList.contains('active'));
+  assert.match(editor.getValue(), /^<!--full-width-->\n\| A \|/);
+
+  responsiveBtn.click();
+  assert.ok(!table.classList.contains('ek-table-full'));
+  assert.ok(!editor.getValue().includes('full-width'));
+
+  teardownDom();
+});
+
+test('a full-width table loaded from Markdown shows the toolbar with "full width" already active', () => {
+  setupDom();
+  const editor = createMarkdownEditor({ initialValue: '<!--full-width-->\n| A |\n| --- |\n| 1 |' });
+  document.body.appendChild(editor.root);
+  const table = editor.root.querySelector('.ek-md-wysiwyg table');
+  assert.ok(table.classList.contains('ek-table-full'));
+
+  clickInside(table.querySelector('td, th'));
+  const [responsiveBtn, fullWidthBtn] = editor.root.querySelectorAll('.ek-table-toolbar-btn');
+  assert.ok(fullWidthBtn.classList.contains('active'));
+  assert.ok(!responsiveBtn.classList.contains('active'));
+
+  teardownDom();
+});
+
+test('switching to raw mode hides the table toolbar', () => {
+  setupDom();
+  const editor = createMarkdownEditor({ initialValue: '| A |\n| --- |\n| 1 |' });
+  document.body.appendChild(editor.root);
+  const cell = editor.root.querySelector('.ek-md-wysiwyg td, .ek-md-wysiwyg th');
+  clickInside(cell);
+  const tableToolbar = editor.root.querySelector('.ek-table-toolbar');
+  assert.ok(!tableToolbar.classList.contains('ek-hidden'));
+
+  editor.root.querySelector('.ek-md-mode-toggle').click();
+  assert.ok(tableToolbar.classList.contains('ek-hidden'));
+
+  teardownDom();
+});
+
 test('the heading dropdown applies formatBlock via execCommand and resets to Paragraph', () => {
   setupDom();
   const calls = [];

@@ -9,7 +9,8 @@ pre code{background:none;padding:0;}
 img,video{max-width:100%;border-radius:4px;}
 audio{width:100%;}
 blockquote{border-left:3px solid #c1c7d0;margin:0 0 16px;padding:2px 16px;color:#6b778c;}
-table{border-collapse:collapse;width:100%;margin-bottom:16px;}
+table{border-collapse:collapse;margin-bottom:16px;}
+table.ek-table-full{width:100%;}
 th,td{border:1px solid #dfe1e6;padding:6px 10px;text-align:left;}
 .token.comment{color:#8993a4;font-style:italic;}
 .token.string,.token.char,.token.attr-value{color:#216e4e;}

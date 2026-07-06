@@ -255,6 +255,11 @@
   margin-bottom: 16px;
 }
 
+/* Set per-table via the WYSIWYG editor's floating table toolbar. */
+.ek-page-body table.ek-table-full {
+  width: 100%;
+}
+
 .ek-page-body th,
 .ek-page-body td {
   border: 1px solid var(--ek-border);

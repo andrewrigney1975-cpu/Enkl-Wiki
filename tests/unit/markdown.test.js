@@ -103,6 +103,28 @@ test('renders a GFM-lite table', () => {
   );
 });
 
+test('a <!--full-width--> marker immediately above a table adds the ek-table-full class and is not itself rendered', () => {
+  const html = renderMarkdown('<!--full-width-->\n| A | B |\n|---|---|\n| 1 | 2 |');
+  assert.match(html, /^<table class="ek-table-full">/);
+  assert.ok(!html.includes('full-width'));
+});
+
+test('the full-width marker is tolerant of extra spaces and case', () => {
+  const html = renderMarkdown('<!-- FULL-WIDTH -->\n| A |\n|---|\n| 1 |');
+  assert.match(html, /^<table class="ek-table-full">/);
+});
+
+test('a table without the marker has no width class', () => {
+  const html = renderMarkdown('| A | B |\n|---|---|\n| 1 | 2 |');
+  assert.match(html, /^<table>/);
+});
+
+test('the marker only applies to a table that immediately follows it, not to an unrelated paragraph', () => {
+  const html = renderMarkdown('<!--full-width-->\n\nJust a paragraph, no table here.');
+  assert.match(html, /full-width/); // rendered as literal (escaped) text, not consumed
+  assert.ok(!html.includes('ek-table-full'));
+});
+
 test('stripMarkdownToPlainText strips syntax down to plain words', () => {
   const text = stripMarkdownToPlainText('# Title\n\n**Bold** and _italic_ with `code` and [a link](https://example.com).\n\n- one\n- two');
   assert.ok(!text.includes('#'));

@@ -70,7 +70,11 @@ export function htmlToMarkdown(root) {
           `| ${headerCells.map(() => '---').join(' | ')} |`,
           ...bodyRows.map((cells) => `| ${cells.join(' | ')} |`)
         ];
-        return lines.join('\n') + '\n\n';
+        // A width preference set via the table's floating toolbar (see
+        // createMarkdownEditor below) round-trips as a marker comment so
+        // renderMarkdown() can restore the ek-table-full class on reload.
+        const marker = node.classList.contains('ek-table-full') ? '<!--full-width-->\n' : '';
+        return marker + lines.join('\n') + '\n\n';
       }
       default:
         return walkChildren(node);
@@ -229,11 +233,102 @@ export function createMarkdownEditor({ initialValue = '' } = {}) {
   tableWrap.append(tableBtn, tablePopover);
   toolbar.appendChild(tableWrap);
 
+  // Floating per-table toolbar: appears near the top-left of whichever
+  // table the cursor is currently inside, letting the editor pick between
+  // "responsive" (sizes to content, the default) and "full width". Kept as
+  // a sibling of wysiwyg rather than a child of it, so it never has to be
+  // specially excluded from htmlToMarkdown()'s serialization walk.
+  const tableToolbar = document.createElement('div');
+  tableToolbar.className = 'ek-table-toolbar ek-hidden';
+
+  const responsiveBtn = document.createElement('button');
+  responsiveBtn.type = 'button';
+  responsiveBtn.className = 'ek-table-toolbar-btn';
+  responsiveBtn.title = 'Responsive width (fits content)';
+  responsiveBtn.innerHTML = iconMarkup('tableResponsive', 14);
+
+  const fullWidthBtn = document.createElement('button');
+  fullWidthBtn.type = 'button';
+  fullWidthBtn.className = 'ek-table-toolbar-btn';
+  fullWidthBtn.title = 'Full width';
+  fullWidthBtn.innerHTML = iconMarkup('tableFull', 14);
+
+  tableToolbar.append(responsiveBtn, fullWidthBtn);
+
+  let focusedTable = null;
+
+  function updateTableToolbarButtons() {
+    const isFull = Boolean(focusedTable && focusedTable.classList.contains('ek-table-full'));
+    responsiveBtn.classList.toggle('active', !isFull);
+    fullWidthBtn.classList.toggle('active', isFull);
+  }
+
+  function positionTableToolbar() {
+    if (!focusedTable) return;
+    const rootRect = root.getBoundingClientRect();
+    const tableRect = focusedTable.getBoundingClientRect();
+    tableToolbar.style.top = `${tableRect.top - rootRect.top + 4}px`;
+    tableToolbar.style.left = `${tableRect.left - rootRect.left + 4}px`;
+  }
+
+  function hideTableToolbar() {
+    focusedTable = null;
+    tableToolbar.classList.add('ek-hidden');
+  }
+
+  // Re-derives which table (if any) the cursor is in from the live
+  // selection — there's no "current block" tracking elsewhere in this
+  // editor, so this mirrors the heading dropdown's own approach of just
+  // reacting to explicit events rather than continuously watching state.
+  function refreshTableToolbar() {
+    if (mode !== 'wysiwyg') return;
+    const sel = document.getSelection();
+    let node = sel && sel.anchorNode;
+    if (node && node.nodeType === 3) node = node.parentElement;
+    const table = node && node.closest && wysiwyg.contains(node) ? node.closest('table') : null;
+    if (!table) {
+      hideTableToolbar();
+      return;
+    }
+    focusedTable = table;
+    tableToolbar.classList.remove('ek-hidden');
+    updateTableToolbarButtons();
+    positionTableToolbar();
+  }
+
+  responsiveBtn.addEventListener('click', () => {
+    if (!focusedTable) return;
+    focusedTable.classList.remove('ek-table-full');
+    updateTableToolbarButtons();
+  });
+
+  fullWidthBtn.addEventListener('click', () => {
+    if (!focusedTable) return;
+    focusedTable.classList.add('ek-table-full');
+    updateTableToolbarButtons();
+  });
+
+  wysiwyg.addEventListener('click', refreshTableToolbar);
+  wysiwyg.addEventListener('keyup', refreshTableToolbar);
+  wysiwyg.addEventListener('scroll', positionTableToolbar);
+  document.addEventListener('selectionchange', () => {
+    // jsdom (in tests) dispatches selectionchange asynchronously, so this
+    // can still fire after a test has torn its jsdom globals back down —
+    // `typeof` is the only reference to `document` that can't itself throw.
+    if (typeof document === 'undefined') return;
+    if (document.activeElement === wysiwyg) refreshTableToolbar();
+  });
+  // Matches the table-insert popover's own click-outside pattern above.
+  document.addEventListener('click', (e) => {
+    if (!wysiwyg.contains(e.target) && !tableToolbar.contains(e.target)) hideTableToolbar();
+  });
+
   const modeToggle = document.createElement('button');
   modeToggle.type = 'button';
   modeToggle.className = 'ek-md-toolbar-btn ek-md-mode-toggle';
   modeToggle.textContent = 'View Markdown';
   modeToggle.addEventListener('click', () => {
+    hideTableToolbar();
     if (mode === 'wysiwyg') {
       raw.value = htmlToMarkdown(wysiwyg);
       wysiwyg.classList.add('ek-hidden');
@@ -250,13 +345,14 @@ export function createMarkdownEditor({ initialValue = '' } = {}) {
   });
   toolbar.appendChild(modeToggle);
 
-  root.append(toolbar, wysiwyg, raw);
+  root.append(toolbar, wysiwyg, raw, tableToolbar);
 
   function getValue() {
     return mode === 'raw' ? raw.value : htmlToMarkdown(wysiwyg);
   }
 
   function setValue(markdown) {
+    hideTableToolbar();
     if (mode === 'raw') raw.value = markdown;
     else wysiwyg.innerHTML = renderMarkdown(markdown);
   }
@@ -273,6 +369,7 @@ export function createMarkdownEditor({ initialValue = '' } = {}) {
       raw.focus();
       raw.selectionStart = raw.selectionEnd = start + snippet.length;
     } else {
+      hideTableToolbar();
       wysiwyg.innerHTML += renderMarkdown(snippet);
     }
   }
