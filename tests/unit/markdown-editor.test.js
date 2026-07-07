@@ -5,6 +5,32 @@ import { htmlToMarkdown, createMarkdownEditor, buildTableHtml } from '../../src/
 import { renderStaticHtml } from '../../src/advtable/advtable-render.js';
 import { createModel, setRawCell } from '../../src/advtable/advtable-model.js';
 
+test('htmlToMarkdown serializes an <iframe> back into an ```iframe fence carrying its data-iframe JSON', () => {
+  setupDom();
+  const div = document.createElement('div');
+  const data = { url: 'https://example.com/embed', width: 600, widthUnit: 'px', height: 400 };
+  div.innerHTML = `<iframe src="https://example.com/embed" style="width:600px;height:400px;border:0" data-iframe='${JSON.stringify(data).replace(/'/g, '&apos;')}'></iframe>`;
+  const md = htmlToMarkdown(div);
+  assert.match(md, /^```iframe\n/);
+  assert.match(md, /```\s*$/);
+  const jsonLine = md.split('\n')[1];
+  assert.deepEqual(JSON.parse(jsonLine), data);
+  teardownDom();
+});
+
+test('an iframe embed survives a render -> WYSIWYG -> serialize round trip', () => {
+  setupDom();
+  const data = { url: 'https://example.com/embed', width: 50, widthUnit: '%', height: 300 };
+  const initialValue = '```iframe\n' + JSON.stringify(data) + '\n```';
+  const editor = createMarkdownEditor({ initialValue });
+  assert.ok(editor.root.querySelector('.ek-md-wysiwyg iframe'));
+  const roundTripped = editor.getValue();
+  assert.match(roundTripped, /```iframe/);
+  assert.match(roundTripped, /"width":50/);
+  assert.match(roundTripped, /"widthUnit":"%"/);
+  teardownDom();
+});
+
 test('htmlToMarkdown round-trips headings, emphasis, links and lists', () => {
   setupDom();
   const div = document.createElement('div');

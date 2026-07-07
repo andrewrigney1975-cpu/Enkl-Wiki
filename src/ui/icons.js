@@ -40,6 +40,9 @@ const ICONS = {
   // advtable-widget.js).
   tableAdvanced: '<rect x="2" y="7" width="14" height="13" rx="1" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M2 13.5h14M9 7v13" stroke="currentColor" stroke-width="1.6"/><path d="M19 1.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z" fill="currentColor"/>',
   print: '<path d="M6 9V3h12v6" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round"/><rect x="4" y="9" width="16" height="8" rx="1" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M6 14h12v7H6z" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round"/>',
+  // A frame nested inside a frame — the embedded page's own viewport sitting
+  // inside the outer page (used for "Insert IFRAME").
+  iframe: '<rect x="3" y="4" width="18" height="16" rx="1" stroke="currentColor" stroke-width="1.6" fill="none"/><rect x="7" y="8" width="10" height="8" rx="0.5" stroke="currentColor" stroke-width="1.6" fill="none"/>',
   // Two chevrons pointing toward each other ("><"), for "shrink to content".
   tableResponsive: '<path d="M9 7l4 5-4 5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 7l-4 5 4 5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
   // Two chevrons pointing away from each other ("<>"), for "stretch to fill".

@@ -3,6 +3,7 @@ import { createMarkdownEditor } from '../content/markdown-editor.js';
 import { createEditorPanel } from './editor-panel.js';
 import { showUploadModal } from './upload-modal.js';
 import { showDiagramModal } from './diagram-modal.js';
+import { showIframeModal } from './iframe-modal.js';
 import { iconMarkup } from './icons.js';
 import { parseTagTokens, tagNamesForIds } from '../content/tag-model.js';
 import { getProvider, getPages, getTags, getUploads, createPage, updatePageMetadata } from '../app/state.js';
@@ -106,10 +107,20 @@ export function showPageEditorModal({ mode, page = null, parentId = null, onSave
       showDiagramModal({ onExported: (upload) => editor.insertText(`![diagram](${upload.url})`) });
     });
 
+    const iframeBtn = document.createElement('button');
+    iframeBtn.type = 'button';
+    iframeBtn.className = 'ek-md-toolbar-btn';
+    iframeBtn.title = 'Insert IFRAME';
+    iframeBtn.innerHTML = iconMarkup('iframe', 15);
+    iframeBtn.addEventListener('click', () => {
+      showIframeModal({ onInsert: (snippet) => editor.insertText(snippet) });
+    });
+
     const toolbar = editor.root.querySelector('.ek-md-toolbar');
     const modeToggle = toolbar.querySelector('.ek-md-mode-toggle');
     toolbar.insertBefore(uploadBtn, modeToggle);
     toolbar.insertBefore(diagramBtn, modeToggle);
+    toolbar.insertBefore(iframeBtn, modeToggle);
   })();
 
   saveBtn.addEventListener('click', async () => {

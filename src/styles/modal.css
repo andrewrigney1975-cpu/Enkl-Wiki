@@ -116,6 +116,31 @@
   margin-top: 4px;
 }
 
+/* "Insert IFRAME" modal's width/height fields, side by side. */
+.ek-iframe-dimensions-row {
+  display: flex;
+  gap: 16px;
+}
+
+.ek-iframe-dimensions-row .ek-field {
+  flex: 1;
+}
+
+.ek-iframe-width-wrap {
+  display: flex;
+  gap: 6px;
+}
+
+.ek-iframe-width-wrap input {
+  flex: 1;
+  min-width: 0;
+}
+
+.ek-iframe-width-wrap select {
+  width: 64px;
+  flex-shrink: 0;
+}
+
 .ek-button-row {
   display: flex;
   gap: 8px;

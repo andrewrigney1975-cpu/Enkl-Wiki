@@ -59,6 +59,14 @@ export function htmlToMarkdown(root) {
       case 'audio':
       case 'video':
         return `![${node.getAttribute('title') || ''}](${node.getAttribute('src') || ''})`;
+      case 'iframe': {
+        // data-iframe carries the original {url, width, widthUnit, height}
+        // JSON verbatim (see markdown.js's renderIframeEmbed) — round-trip
+        // that directly rather than re-deriving it from the rendered style
+        // attribute.
+        const data = node.getAttribute('data-iframe') || '';
+        return '```iframe\n' + data + '\n```\n\n';
+      }
       case 'ul':
         return [...node.children].map((li) => `- ${walk(li).trim()}`).join('\n') + '\n\n';
       case 'ol':

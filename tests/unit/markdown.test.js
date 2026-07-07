@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { renderMarkdown, stripMarkdownToPlainText } from '../../src/content/markdown.js';
+import { renderMarkdown, stripMarkdownToPlainText, isAllowedIframeUrl } from '../../src/content/markdown.js';
 
 test('renders headings and paragraphs', () => {
   const html = renderMarkdown('# Title\n\nHello world.');
@@ -117,6 +117,70 @@ test('an error formula in an ek-table cell renders its error code with the error
   const payload = JSON.stringify({ rows: 1, cols: 1, cells: { 'A1': '=1/0' } });
   const html = renderMarkdown('```ek-table\n' + payload + '\n```');
   assert.match(html, /<td class="ek-advtable-error">#DIV\/0!<\/td>/);
+});
+
+test('isAllowedIframeUrl accepts https: and relative URLs, rejects everything else', () => {
+  assert.equal(isAllowedIframeUrl('https://example.com/embed'), true);
+  assert.equal(isAllowedIframeUrl('/pages/embed.html'), true);
+  assert.equal(isAllowedIframeUrl('embed.html'), true);
+  assert.equal(isAllowedIframeUrl('../shared/embed.html'), true);
+
+  assert.equal(isAllowedIframeUrl('http://example.com'), false);
+  assert.equal(isAllowedIframeUrl('javascript:alert(1)'), false);
+  assert.equal(isAllowedIframeUrl('data:text/html,hi'), false);
+  assert.equal(isAllowedIframeUrl('//evil.example.com/x'), false, 'protocol-relative URLs are rejected');
+  assert.equal(isAllowedIframeUrl(''), false);
+  assert.equal(isAllowedIframeUrl('   '), false);
+});
+
+test('a ```iframe fence with an https: URL renders a borderless <iframe>', () => {
+  const payload = JSON.stringify({ url: 'https://example.com/embed', width: 600, widthUnit: 'px', height: 400 });
+  const html = renderMarkdown('```iframe\n' + payload + '\n```');
+  assert.match(html, /<iframe src="https:\/\/example\.com\/embed"/);
+  assert.match(html, /style="width:600px;height:400px;border:0;display:block"/);
+  assert.match(html, /title="Embedded content"/);
+});
+
+test('a ```iframe fence with a percentage width renders that unit', () => {
+  const payload = JSON.stringify({ url: '/embed', width: 50, widthUnit: '%', height: 300 });
+  const html = renderMarkdown('```iframe\n' + payload + '\n```');
+  assert.match(html, /style="width:50%;height:300px;border:0;display:block"/);
+});
+
+test('an iframe fence with a disallowed URL scheme falls back to a plain code block, not an <iframe>', () => {
+  const payload = JSON.stringify({ url: 'http://example.com', width: 600, widthUnit: 'px', height: 400 });
+  const html = renderMarkdown('```iframe\n' + payload + '\n```');
+  assert.ok(!html.includes('<iframe'));
+  assert.match(html, /<pre><code class="language-iframe">/);
+});
+
+test('an iframe fence with malformed JSON falls back to a plain code block', () => {
+  const html = renderMarkdown('```iframe\nnot valid json\n```');
+  assert.ok(!html.includes('<iframe'));
+  assert.match(html, /<pre><code class="language-iframe">/);
+});
+
+test('an iframe fence with a missing/non-positive width or height falls back to a plain code block', () => {
+  const missingHeight = JSON.stringify({ url: 'https://example.com', width: 600, widthUnit: 'px' });
+  assert.ok(!renderMarkdown('```iframe\n' + missingHeight + '\n```').includes('<iframe'));
+
+  const zeroWidth = JSON.stringify({ url: 'https://example.com', width: 0, widthUnit: 'px', height: 400 });
+  assert.ok(!renderMarkdown('```iframe\n' + zeroWidth + '\n```').includes('<iframe'));
+});
+
+test('an unrecognized widthUnit falls back to px rather than emitting unsafe/invalid CSS', () => {
+  const payload = JSON.stringify({ url: 'https://example.com', width: 600, widthUnit: 'em; color:red', height: 400 });
+  const html = renderMarkdown('```iframe\n' + payload + '\n```');
+  assert.match(html, /style="width:600px;/);
+});
+
+test('the iframe data-iframe attribute round-trips the exact source JSON', () => {
+  const payload = { url: 'https://example.com/embed', width: 600, widthUnit: 'px', height: 400 };
+  const html = renderMarkdown('```iframe\n' + JSON.stringify(payload) + '\n```');
+  const match = html.match(/data-iframe="([^"]*)"/);
+  assert.ok(match);
+  const decoded = match[1].replace(/&quot;/g, '"').replace(/&amp;/g, '&');
+  assert.deepEqual(JSON.parse(decoded), payload);
 });
 
 test('renders unordered and ordered lists', () => {
