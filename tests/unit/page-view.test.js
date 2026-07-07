@@ -27,7 +27,7 @@ test('renders the page title, tags and markdown body', async () => {
   teardownDom();
 });
 
-test('shows the page\'s last-updated date/time, zero-padded, to the left of the print/export buttons', async () => {
+test('shows the page\'s last-updated date/time, zero-padded, in the top meta row', async () => {
   setupDom();
   const container = document.createElement('div');
   // Built from local wall-clock components (not a UTC literal) so the
@@ -43,11 +43,14 @@ test('shows the page\'s last-updated date/time, zero-padded, to the left of the 
   assert.ok(lastUpdated);
   assert.equal(lastUpdated.textContent, 'Last Updated : 09:05 05, January 2026');
 
-  const actions = container.querySelector('.ek-page-title-actions');
-  const children = [...actions.children];
-  assert.equal(children[0], lastUpdated, 'the timestamp should sit to the left of the print/export buttons');
-  assert.ok(children[1].classList.contains('ek-page-print-btn'));
-  assert.ok(children[2].classList.contains('ek-page-export-btn'));
+  // Lives in the same top meta row as the breadcrumb (not down by the
+  // title), so its top edge lines up with the "On this page" panel.
+  const metaRow = container.querySelector('.ek-page-meta-row');
+  assert.ok(metaRow);
+  assert.ok(metaRow.contains(lastUpdated));
+
+  const articleChildren = [...container.querySelector('.ek-page').children];
+  assert.ok(articleChildren.indexOf(metaRow) < articleChildren.indexOf(container.querySelector('.ek-page-title-row')));
 
   teardownDom();
 });
@@ -61,6 +64,75 @@ test('a page with no updatedAt renders no last-updated element', async () => {
   await renderPageView(container, { page, provider, tags: [] });
 
   assert.equal(container.querySelector('.ek-page-last-updated'), null);
+  teardownDom();
+});
+
+test('renders a clickable breadcrumb trail above the title, using a right-arrow separator', async () => {
+  setupDom();
+  const container = document.createElement('div');
+  const grandparent = { id: 'gp', slug: 'guides', title: 'Guides', parentId: null };
+  const parent = { id: 'p', slug: 'setup', title: 'Setup', parentId: 'gp' };
+  const page = { id: 'c', slug: 'install', title: 'Install', parentId: 'p', tagIds: [] };
+  const provider = { getPageBody: async () => 'body' };
+
+  await renderPageView(container, { page, provider, tags: [], pages: [grandparent, parent, page] });
+
+  const breadcrumb = container.querySelector('.ek-breadcrumb');
+  assert.ok(breadcrumb);
+  // Should appear before the title, inside the shared top meta row.
+  assert.ok(container.querySelector('.ek-page-meta-row').contains(breadcrumb));
+  const articleChildren = [...container.querySelector('.ek-page').children];
+  assert.ok(articleChildren.indexOf(container.querySelector('.ek-page-meta-row')) < articleChildren.indexOf(container.querySelector('.ek-page-title-row')));
+
+  const links = [...breadcrumb.querySelectorAll('.ek-breadcrumb-link')].map((el) => el.textContent);
+  assert.deepEqual(links, ['Guides', 'Setup']);
+  assert.equal(breadcrumb.querySelector('.ek-breadcrumb-current').textContent, 'Install');
+
+  const seps = [...breadcrumb.querySelectorAll('.ek-breadcrumb-sep')].map((el) => el.textContent);
+  assert.deepEqual(seps, ['→', '→']);
+
+  window.location.hash = '';
+  breadcrumb.querySelectorAll('.ek-breadcrumb-link')[1].click();
+  assert.equal(window.location.hash, '#!/setup');
+
+  teardownDom();
+});
+
+test('a page with neither ancestors nor an updatedAt renders no meta row at all', async () => {
+  setupDom();
+  const container = document.createElement('div');
+  const page = { id: '1', slug: 'home', title: 'Home', parentId: null, tagIds: [] };
+  const provider = { getPageBody: async () => 'body' };
+
+  await renderPageView(container, { page, provider, tags: [], pages: [page] });
+
+  assert.equal(container.querySelector('.ek-page-meta-row'), null);
+  teardownDom();
+});
+
+test('a top-level page (no ancestors) renders no breadcrumb at all', async () => {
+  setupDom();
+  const container = document.createElement('div');
+  const page = { id: '1', slug: 'home', title: 'Home', parentId: null, tagIds: [] };
+  const provider = { getPageBody: async () => 'body' };
+
+  await renderPageView(container, { page, provider, tags: [], pages: [page] });
+
+  assert.equal(container.querySelector('.ek-breadcrumb'), null);
+  teardownDom();
+});
+
+test('a corrupt/circular parentId chain does not hang the breadcrumb build', async () => {
+  setupDom();
+  const container = document.createElement('div');
+  const a = { id: 'a', slug: 'a', title: 'A', parentId: 'b', tagIds: [] };
+  const b = { id: 'b', slug: 'b', title: 'B', parentId: 'a', tagIds: [] };
+  const provider = { getPageBody: async () => 'body' };
+
+  await renderPageView(container, { page: a, provider, tags: [], pages: [a, b] });
+
+  const breadcrumb = container.querySelector('.ek-breadcrumb');
+  assert.ok(breadcrumb, 'should still render, just truncated at the cycle');
   teardownDom();
 });
 

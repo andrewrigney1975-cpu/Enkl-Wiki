@@ -5,6 +5,7 @@ import { slugify } from '../content/page-model.js';
 import { enhanceTable } from '../content/table-controls.js';
 import { hydrateAdvancedTables } from '../advtable/advtable-widget.js';
 import { iconMarkup } from './icons.js';
+import { navigateToSlug } from '../app/router.js';
 
 // Guards against a slow provider.getPageBody() resolving after the user has
 // already navigated elsewhere — only the most recently requested render wins.
@@ -26,6 +27,56 @@ function formatLastUpdated(iso) {
   const mm = String(date.getMinutes()).padStart(2, '0');
   const dd = String(date.getDate()).padStart(2, '0');
   return `Last Updated : ${hh}:${mm} ${dd}, ${MONTH_NAMES[date.getMonth()]} ${date.getFullYear()}`;
+}
+
+// Walks parentId up to the root, returning ancestors-first with the current
+// page last (e.g. [Grandparent, Parent, Current]). Stops early on a cycle
+// (a corrupt parentId chain) rather than looping forever.
+function buildBreadcrumbTrail(page, pages) {
+  const byId = new Map(pages.map((p) => [p.id, p]));
+  const trail = [];
+  const seen = new Set();
+  let current = page;
+  while (current && !seen.has(current.id)) {
+    seen.add(current.id);
+    trail.unshift(current);
+    current = current.parentId ? byId.get(current.parentId) : null;
+  }
+  return trail;
+}
+
+function renderBreadcrumb(trail) {
+  const nav = document.createElement('nav');
+  nav.className = 'ek-breadcrumb';
+  nav.setAttribute('aria-label', 'Breadcrumb');
+
+  trail.forEach((crumb, i) => {
+    if (i > 0) {
+      const sep = document.createElement('span');
+      sep.className = 'ek-breadcrumb-sep';
+      sep.textContent = '→'; // →
+      sep.setAttribute('aria-hidden', 'true');
+      nav.appendChild(sep);
+    }
+
+    const isCurrent = i === trail.length - 1;
+    if (isCurrent) {
+      const current = document.createElement('span');
+      current.className = 'ek-breadcrumb-current';
+      current.textContent = crumb.title;
+      current.setAttribute('aria-current', 'page');
+      nav.appendChild(current);
+    } else {
+      const link = document.createElement('button');
+      link.type = 'button';
+      link.className = 'ek-breadcrumb-link';
+      link.textContent = crumb.title;
+      link.addEventListener('click', () => navigateToSlug(crumb.slug));
+      nav.appendChild(link);
+    }
+  });
+
+  return nav;
 }
 
 // Cleans up the previous page's scroll listener before a new one is
@@ -99,7 +150,7 @@ function renderTocPane(outline, scrollContainer) {
   return aside;
 }
 
-export async function renderPageView(container, { page, provider, tags = [] } = {}) {
+export async function renderPageView(container, { page, provider, tags = [], pages = [] } = {}) {
   const token = ++renderCounter;
 
   cleanupTocScrollListener?.();
@@ -129,6 +180,25 @@ export async function renderPageView(container, { page, provider, tags = [] } = 
     article.appendChild(banner);
   }
 
+  // Breadcrumb and "Last Updated" share one row at the very top of the page
+  // (rather than "Last Updated" sitting down by the title) specifically so
+  // their top edge lines up with the "On this page" panel's own heading,
+  // which starts at the same top padding in the column beside it.
+  const breadcrumbTrail = buildBreadcrumbTrail(page, pages);
+  const lastUpdatedText = page.updatedAt ? formatLastUpdated(page.updatedAt) : null;
+  if (breadcrumbTrail.length > 1 || lastUpdatedText) {
+    const metaRow = document.createElement('div');
+    metaRow.className = 'ek-page-meta-row';
+    if (breadcrumbTrail.length > 1) metaRow.appendChild(renderBreadcrumb(breadcrumbTrail));
+    if (lastUpdatedText) {
+      const lastUpdated = document.createElement('span');
+      lastUpdated.className = 'ek-page-last-updated';
+      lastUpdated.textContent = lastUpdatedText;
+      metaRow.appendChild(lastUpdated);
+    }
+    article.appendChild(metaRow);
+  }
+
   const titleRow = document.createElement('div');
   titleRow.className = 'ek-page-title-row';
 
@@ -151,15 +221,6 @@ export async function renderPageView(container, { page, provider, tags = [] } = 
 
   const titleActions = document.createElement('div');
   titleActions.className = 'ek-page-title-actions';
-
-  const lastUpdatedText = page.updatedAt ? formatLastUpdated(page.updatedAt) : null;
-  if (lastUpdatedText) {
-    const lastUpdated = document.createElement('span');
-    lastUpdated.className = 'ek-page-last-updated';
-    lastUpdated.textContent = lastUpdatedText;
-    titleActions.appendChild(lastUpdated);
-  }
-
   titleActions.append(printBtn, exportBtn);
 
   titleRow.append(title, titleActions);

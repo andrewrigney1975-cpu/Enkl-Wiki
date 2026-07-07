@@ -191,7 +191,7 @@ export async function renderApp(root) {
     toolStrip.classList.toggle('ek-hidden', !isUnlocked());
     editPageBtn.disabled = !page;
     renderTree(treePane, { pages: getPages(), activeId: page?.id });
-    renderPageView(mainContent, { page, provider: getProvider(), tags: getTags() });
+    renderPageView(mainContent, { page, provider: getProvider(), tags: getTags(), pages: getPages() });
     closeMobileMenu();
   }
 
