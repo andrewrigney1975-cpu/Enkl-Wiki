@@ -10,6 +10,24 @@ import { iconMarkup } from './icons.js';
 // already navigated elsewhere — only the most recently requested render wins.
 let renderCounter = 0;
 
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+];
+
+// Renders in the viewer's own local time zone (plain Date getters, not the
+// UTC variants) using a fixed 24-hour HH:MM plus a full month name — no
+// locale-dependent formatting, so "03/04/2026" ambiguity (is that March 4th
+// or April 3rd?) can't happen.
+function formatLastUpdated(iso) {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return null;
+  const hh = String(date.getHours()).padStart(2, '0');
+  const mm = String(date.getMinutes()).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `Last Updated : ${hh}:${mm} ${dd}, ${MONTH_NAMES[date.getMonth()]} ${date.getFullYear()}`;
+}
+
 // Cleans up the previous page's scroll listener before a new one is
 // attached — renderPageView reuses the same container element across
 // navigations (only its innerHTML is replaced), so listeners added directly
@@ -133,6 +151,15 @@ export async function renderPageView(container, { page, provider, tags = [] } = 
 
   const titleActions = document.createElement('div');
   titleActions.className = 'ek-page-title-actions';
+
+  const lastUpdatedText = page.updatedAt ? formatLastUpdated(page.updatedAt) : null;
+  if (lastUpdatedText) {
+    const lastUpdated = document.createElement('span');
+    lastUpdated.className = 'ek-page-last-updated';
+    lastUpdated.textContent = lastUpdatedText;
+    titleActions.appendChild(lastUpdated);
+  }
+
   titleActions.append(printBtn, exportBtn);
 
   titleRow.append(title, titleActions);

@@ -27,6 +27,43 @@ test('renders the page title, tags and markdown body', async () => {
   teardownDom();
 });
 
+test('shows the page\'s last-updated date/time, zero-padded, to the left of the print/export buttons', async () => {
+  setupDom();
+  const container = document.createElement('div');
+  // Built from local wall-clock components (not a UTC literal) so the
+  // expected formatted output below is correct regardless of which time
+  // zone this test happens to run in.
+  const localDate = new Date(2026, 0, 5, 9, 5); // Jan 5 2026, 09:05 local
+  const page = { id: '1', title: 'X', tagIds: [], updatedAt: localDate.toISOString() };
+  const provider = { getPageBody: async () => 'body' };
+
+  await renderPageView(container, { page, provider, tags: [] });
+
+  const lastUpdated = container.querySelector('.ek-page-last-updated');
+  assert.ok(lastUpdated);
+  assert.equal(lastUpdated.textContent, 'Last Updated : 09:05 05, January 2026');
+
+  const actions = container.querySelector('.ek-page-title-actions');
+  const children = [...actions.children];
+  assert.equal(children[0], lastUpdated, 'the timestamp should sit to the left of the print/export buttons');
+  assert.ok(children[1].classList.contains('ek-page-print-btn'));
+  assert.ok(children[2].classList.contains('ek-page-export-btn'));
+
+  teardownDom();
+});
+
+test('a page with no updatedAt renders no last-updated element', async () => {
+  setupDom();
+  const container = document.createElement('div');
+  const page = { id: '1', title: 'X', tagIds: [] };
+  const provider = { getPageBody: async () => 'body' };
+
+  await renderPageView(container, { page, provider, tags: [] });
+
+  assert.equal(container.querySelector('.ek-page-last-updated'), null);
+  teardownDom();
+});
+
 test('the export button downloads a standalone HTML file for the current page', async () => {
   setupDom();
   const originalCreateElement = document.createElement.bind(document);
