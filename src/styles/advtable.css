@@ -1,0 +1,146 @@
+/* The advanced table (spreadsheet) widget — see src/advtable/advtable-widget.js.
+   Reuses .ek-table-filter-input/.ek-table-filter-range from table-controls.css
+   for the filter row controls, so only this widget's own chrome needs styling
+   here. */
+.ek-advtable {
+  margin-bottom: 16px;
+}
+
+.ek-advtable-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.ek-advtable-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0 8px;
+  background: none;
+  border: 1px solid var(--ek-border-strong);
+  border-radius: var(--ek-radius);
+  color: var(--ek-text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.ek-advtable-btn:hover {
+  background: var(--ek-hover-tint);
+  color: var(--ek-text);
+}
+
+.ek-advtable-btn.active {
+  background: var(--ek-blue);
+  border-color: var(--ek-blue);
+  color: #fff;
+}
+
+.ek-advtable-clear-filters-btn {
+  color: var(--ek-danger);
+  border-color: var(--ek-danger);
+}
+
+.ek-advtable-clear-filters-btn:hover {
+  background: var(--ek-danger-hover-bg);
+  color: var(--ek-danger);
+}
+
+.ek-advtable-export-btn {
+  font-size: 12px;
+  padding: 5px 10px;
+  margin-left: auto;
+}
+
+.ek-advtable-formula-input {
+  flex: 1;
+  min-width: 160px;
+  height: 26px;
+  box-sizing: border-box;
+  border: 1px solid var(--ek-border);
+  border-radius: 3px;
+  padding: 0 8px;
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: var(--ek-text);
+  background: var(--ek-input-bg);
+}
+
+.ek-advtable-formula-input:focus {
+  outline: none;
+  border-color: var(--ek-blue);
+  background: var(--ek-input-bg-focus);
+}
+
+.ek-advtable-table-wrap {
+  overflow-x: auto;
+}
+
+.ek-advtable-table {
+  border-collapse: collapse;
+  width: auto;
+}
+
+.ek-advtable-table th,
+.ek-advtable-table td {
+  border: 1px solid var(--ek-border);
+  padding: 0;
+  text-align: left;
+}
+
+.ek-advtable-table thead th {
+  background: var(--ek-panel-bg);
+  padding: 5px 8px;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.ek-advtable-table tbody th {
+  background: var(--ek-panel-bg);
+  padding: 5px 8px;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.ek-advtable-corner {
+  background: var(--ek-panel-bg);
+}
+
+.ek-advtable-table .ek-advtable-filter-row th {
+  background: var(--ek-surface);
+  padding: 4px 6px;
+  font-weight: 400;
+}
+
+.ek-advtable-cell-input {
+  display: block;
+  width: 90px;
+  box-sizing: border-box;
+  border: none;
+  border-radius: 0;
+  padding: 5px 8px;
+  font-size: 13px;
+  color: var(--ek-text);
+  background: var(--ek-input-bg);
+}
+
+.ek-advtable-cell-input:focus {
+  outline: 2px solid var(--ek-blue);
+  outline-offset: -2px;
+  background: var(--ek-input-bg-focus);
+  position: relative;
+  z-index: 1;
+}
+
+.ek-advtable-cell-input.ek-advtable-numeric {
+  text-align: right;
+}
+
+.ek-advtable-cell-input.ek-advtable-error {
+  color: var(--ek-danger);
+}

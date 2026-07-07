@@ -3,6 +3,7 @@ import { tagNamesForIds } from '../content/tag-model.js';
 import { exportPageAsHtml } from '../content/page-export.js';
 import { slugify } from '../content/page-model.js';
 import { enhanceTable } from '../content/table-controls.js';
+import { hydrateAdvancedTables } from '../advtable/advtable-widget.js';
 import { iconMarkup } from './icons.js';
 
 // Guards against a slow provider.getPageBody() resolving after the user has
@@ -156,11 +157,18 @@ export async function renderPageView(container, { page, provider, tags = [] } = 
   const cleanBodyHtml = content.innerHTML;
   exportBtn.addEventListener('click', () => exportPageAsHtml(page, cleanBodyHtml));
 
-  const tables = [...content.querySelectorAll('table')];
+  const tables = [...content.querySelectorAll('table:not(.ek-advtable-table)')];
   tables.forEach((table, i) => {
     const filenameHint = tables.length > 1 ? `${page.slug || 'table'}-table-${i + 1}` : `${page.slug || 'table'}`;
     enhanceTable(table, { filenameHint });
   });
+
+  // Anyone reading the page can play with an advanced table's values/
+  // formulas live in their own browser (add rows/columns, edit cells,
+  // filter) — same as the plain-table sort/filter controls above, none of
+  // this is ever written back to page storage; only an editor explicitly
+  // saving the page durably changes what's stored.
+  hydrateAdvancedTables(content, { filenameHint: page.slug || 'sheet' });
 
   const outline = buildTocOutline(content);
   if (outline.length) {

@@ -81,6 +81,44 @@ test('two separate fenced code blocks in the same document parse independently',
   assert.match(html, /<pre><code>second<\/code><\/pre>/);
 });
 
+test('a ```ek-table fence renders an advanced table block with computed cell values', () => {
+  const payload = JSON.stringify({ rows: 2, cols: 2, cells: { 'A1': '2', 'B1': '3', 'A2': '=A1+B1' } });
+  const html = renderMarkdown('```ek-table\n' + payload + '\n```');
+  assert.match(html, /<div class="ek-advtable" data-advtable="/);
+  assert.match(html, /<table class="ek-advtable-table">/);
+  // Column letters across the top, row numbers down the left.
+  assert.match(html, /<th>A<\/th><th>B<\/th>/);
+  assert.match(html, /<th>1<\/th>/);
+  assert.match(html, /<th>2<\/th>/);
+  // A2's formula (=A1+B1) should already be computed in the static render.
+  assert.match(html, /<td class="ek-advtable-numeric">5<\/td>/);
+});
+
+test('the ek-table data-advtable attribute round-trips the exact JSON payload (HTML-escaped)', () => {
+  const payload = JSON.stringify({ rows: 1, cols: 1, cells: { 'A1': '"quoted & <escaped>"' } });
+  const html = renderMarkdown('```ek-table\n' + payload + '\n```');
+  const match = html.match(/data-advtable="([^"]*)"/);
+  assert.ok(match, 'should emit a data-advtable attribute');
+  const decoded = match[1]
+    .replace(/&quot;/g, '"')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&');
+  assert.deepEqual(JSON.parse(decoded), JSON.parse(payload));
+});
+
+test('a malformed ek-table payload falls back to a blank default grid instead of breaking the render', () => {
+  const html = renderMarkdown('```ek-table\nnot valid json at all\n```');
+  assert.match(html, /<div class="ek-advtable"/);
+  assert.match(html, /<th>A<\/th>/);
+});
+
+test('an error formula in an ek-table cell renders its error code with the error class', () => {
+  const payload = JSON.stringify({ rows: 1, cols: 1, cells: { 'A1': '=1/0' } });
+  const html = renderMarkdown('```ek-table\n' + payload + '\n```');
+  assert.match(html, /<td class="ek-advtable-error">#DIV\/0!<\/td>/);
+});
+
 test('renders unordered and ordered lists', () => {
   assert.equal(renderMarkdown('- one\n- two'), '<ul><li>one</li><li>two</li></ul>');
   assert.equal(renderMarkdown('1. one\n2. two'), '<ol><li>one</li><li>two</li></ol>');

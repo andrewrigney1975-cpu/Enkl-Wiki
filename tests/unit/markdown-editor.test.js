@@ -2,6 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { setupDom, teardownDom } from '../helpers/dom-env.js';
 import { htmlToMarkdown, createMarkdownEditor, buildTableHtml } from '../../src/content/markdown-editor.js';
+import { renderStaticHtml } from '../../src/advtable/advtable-render.js';
+import { createModel, setRawCell } from '../../src/advtable/advtable-model.js';
 
 test('htmlToMarkdown round-trips headings, emphasis, links and lists', () => {
   setupDom();
@@ -278,5 +280,92 @@ test('clicking a grid cell inserts a table of that size via execCommand and clos
   assert.ok(editor.root.querySelector('.ek-md-table-picker').classList.contains('ek-hidden'));
 
   delete document.execCommand;
+  teardownDom();
+});
+
+test('the "Insert advanced table" button requests an ek-advtable skeleton via execCommand', () => {
+  setupDom();
+  const calls = [];
+  document.execCommand = (command, showUi, value) => { calls.push({ command, value }); return true; };
+
+  const editor = createMarkdownEditor({ initialValue: '' });
+  const btn = editor.root.querySelector('.ek-md-toolbar-btn[title^="Insert advanced table"]');
+  assert.ok(btn, 'the master toolbar should have an insert-advanced-table button');
+  btn.click();
+
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].command, 'insertHTML');
+  assert.match(calls[0].value, /class="ek-advtable"/);
+  assert.match(calls[0].value, /data-advtable="/);
+
+  delete document.execCommand;
+  teardownDom();
+});
+
+test('clicking "Insert advanced table" immediately hydrates the inserted block into the interactive widget', () => {
+  setupDom();
+  let wysiwyg;
+  // A real browser's execCommand('insertHTML', ...) inserts synchronously at
+  // the caret; appending approximates that closely enough here to exercise
+  // the hydration call that follows it in markdown-editor.js.
+  document.execCommand = (command, showUi, value) => {
+    if (command === 'insertHTML') wysiwyg.innerHTML += value;
+    return true;
+  };
+
+  const editor = createMarkdownEditor({ initialValue: '' });
+  wysiwyg = editor.root.querySelector('.ek-md-wysiwyg');
+  editor.root.querySelector('.ek-md-toolbar-btn[title^="Insert advanced table"]').click();
+
+  assert.ok(wysiwyg.querySelector('.ek-advtable-toolbar'), 'the inserted block should already be interactive');
+  assert.match(editor.getValue(), /```ek-table/);
+
+  delete document.execCommand;
+  teardownDom();
+});
+
+test('htmlToMarkdown serializes an advanced table as a ```ek-table fence carrying its data-advtable JSON', () => {
+  setupDom();
+  const model = createModel(1, 1);
+  setRawCell(model, 0, 0, '=1+1');
+  const div = document.createElement('div');
+  div.innerHTML = renderStaticHtml(model);
+  const md = htmlToMarkdown(div);
+  assert.match(md, /^```ek-table\n/);
+  assert.match(md, /"A1":"=1\+1"/);
+  assert.match(md, /```\s*$/);
+  teardownDom();
+});
+
+test('an advanced table survives a render -> WYSIWYG (hydrated) -> serialize round trip', () => {
+  setupDom();
+  const model = createModel(2, 2);
+  setRawCell(model, 0, 0, '3');
+  setRawCell(model, 0, 1, '4');
+  setRawCell(model, 1, 0, '=A1+B1');
+  const initialValue = '```ek-table\n' + JSON.stringify({ rows: model.rows, cols: model.cols, cells: model.cells }) + '\n```';
+
+  const editor = createMarkdownEditor({ initialValue });
+  const wysiwyg = editor.root.querySelector('.ek-md-wysiwyg');
+  assert.ok(wysiwyg.querySelector('.ek-advtable-toolbar'), 'loading existing Markdown should hydrate the block');
+
+  const roundTripped = editor.getValue();
+  assert.match(roundTripped, /```ek-table/);
+  assert.match(roundTripped, /"A2":"=A1\+B1"/);
+
+  teardownDom();
+});
+
+test('clicking inside an advanced table\'s grid does not show the plain full-width table toolbar', () => {
+  setupDom();
+  const model = createModel(1, 1);
+  const initialValue = '```ek-table\n' + JSON.stringify({ rows: model.rows, cols: model.cols, cells: {} }) + '\n```';
+  const editor = createMarkdownEditor({ initialValue });
+  document.body.appendChild(editor.root);
+
+  const cellInput = editor.root.querySelector('.ek-advtable-cell-input');
+  clickInside(cellInput);
+
+  assert.ok(editor.root.querySelector('.ek-table-toolbar').classList.contains('ek-hidden'));
   teardownDom();
 });

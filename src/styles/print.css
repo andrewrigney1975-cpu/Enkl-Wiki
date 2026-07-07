@@ -14,7 +14,9 @@
   .ek-overlay,
   .ek-search-results,
   .ek-table-toolbar-row,
-  .ek-table-filter-row {
+  .ek-table-filter-row,
+  .ek-advtable-toolbar,
+  .ek-advtable-filter-row {
     display: none;
   }
 

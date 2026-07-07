@@ -6,6 +6,9 @@
 // textarea, per the spec's requirement to let editors see/edit the source.
 import { renderMarkdown } from './markdown.js';
 import { iconMarkup } from '../ui/icons.js';
+import { createModel } from '../advtable/advtable-model.js';
+import { renderStaticHtml } from '../advtable/advtable-render.js';
+import { hydrateAdvancedTables } from '../advtable/advtable-widget.js';
 
 export function htmlToMarkdown(root) {
   function walkChildren(node) {
@@ -15,6 +18,16 @@ export function htmlToMarkdown(root) {
   function walk(node) {
     if (node.nodeType === 3) return node.textContent;
     if (node.nodeType !== 1) return '';
+
+    // The advanced table's live model lives in this attribute (kept in sync
+    // by advtable-widget.js on every edit) — its children are the widget's
+    // own interactive DOM, not generic Markdown content, so this must be
+    // checked before the tag switch below (it's a <div>, which otherwise
+    // falls into the generic paragraph-like case).
+    if (node.classList && node.classList.contains('ek-advtable')) {
+      const data = node.getAttribute('data-advtable') || '';
+      return '```ek-table\n' + data + '\n```\n\n';
+    }
 
     const tag = node.tagName.toLowerCase();
     switch (tag) {
@@ -127,6 +140,7 @@ export function createMarkdownEditor({ initialValue = '' } = {}) {
   wysiwyg.className = 'ek-md-wysiwyg';
   wysiwyg.contentEditable = 'true';
   wysiwyg.innerHTML = renderMarkdown(initialValue);
+  hydrateAdvancedTables(wysiwyg);
 
   const raw = document.createElement('textarea');
   raw.className = 'ek-md-raw ek-hidden';
@@ -233,6 +247,21 @@ export function createMarkdownEditor({ initialValue = '' } = {}) {
   tableWrap.append(tableBtn, tablePopover);
   toolbar.appendChild(tableWrap);
 
+  // Advanced table (spreadsheet): inserted at a fixed default size — unlike
+  // the plain-table grid picker above, its dimensions aren't chosen up
+  // front, since rows/columns can always be added afterward from its own
+  // mini-toolbar (see advtable-widget.js).
+  const advTableBtn = document.createElement('button');
+  advTableBtn.type = 'button';
+  advTableBtn.className = 'ek-md-toolbar-btn';
+  advTableBtn.title = 'Insert advanced table (spreadsheet with formulas)';
+  advTableBtn.innerHTML = iconMarkup('tableAdvanced', 15);
+  advTableBtn.addEventListener('click', () => {
+    runCommand('insertHTML', renderStaticHtml(createModel()) + '<p><br></p>');
+    hydrateAdvancedTables(wysiwyg);
+  });
+  toolbar.appendChild(advTableBtn);
+
   // Floating per-table toolbar: appears near the top-left of whichever
   // table the cursor is currently inside, letting the editor pick between
   // "responsive" (sizes to content, the default) and "full width". Kept as
@@ -286,7 +315,11 @@ export function createMarkdownEditor({ initialValue = '' } = {}) {
     let node = sel && sel.anchorNode;
     if (node && node.nodeType === 3) node = node.parentElement;
     const table = node && node.closest && wysiwyg.contains(node) ? node.closest('table') : null;
-    if (!table) {
+    // The advanced table's own grid is a real <table> too, but it has its
+    // own always-visible mini-toolbar (see advtable-widget.js) — it isn't a
+    // plain Markdown table, so it doesn't get the responsive/full-width
+    // toggle.
+    if (!table || table.closest('.ek-advtable')) {
       hideTableToolbar();
       return;
     }
@@ -337,6 +370,7 @@ export function createMarkdownEditor({ initialValue = '' } = {}) {
       modeToggle.textContent = 'View Rendered';
     } else {
       wysiwyg.innerHTML = renderMarkdown(raw.value);
+      hydrateAdvancedTables(wysiwyg);
       raw.classList.add('ek-hidden');
       wysiwyg.classList.remove('ek-hidden');
       mode = 'wysiwyg';
@@ -354,7 +388,10 @@ export function createMarkdownEditor({ initialValue = '' } = {}) {
   function setValue(markdown) {
     hideTableToolbar();
     if (mode === 'raw') raw.value = markdown;
-    else wysiwyg.innerHTML = renderMarkdown(markdown);
+    else {
+      wysiwyg.innerHTML = renderMarkdown(markdown);
+      hydrateAdvancedTables(wysiwyg);
+    }
   }
 
   // Inserts a Markdown snippet (e.g. an uploaded image/diagram reference).
@@ -371,6 +408,7 @@ export function createMarkdownEditor({ initialValue = '' } = {}) {
     } else {
       hideTableToolbar();
       wysiwyg.innerHTML += renderMarkdown(snippet);
+      hydrateAdvancedTables(wysiwyg);
     }
   }
 

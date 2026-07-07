@@ -64,6 +64,48 @@ test('a table in the page body gets interactive sort/filter/export controls', as
   teardownDom();
 });
 
+test('an advanced table in the page body hydrates into a live grid that anyone can play with', async () => {
+  setupDom();
+  const container = document.createElement('div');
+  const page = { id: '1', title: 'Sheet', slug: 'sheet', tagIds: [] };
+  const payload = JSON.stringify({ rows: 2, cols: 2, cells: { 'A1': '2', 'B1': '3', 'A2': '=A1+B1' } });
+  const provider = { getPageBody: async () => '```ek-table\n' + payload + '\n```' };
+
+  await renderPageView(container, { page, provider, tags: [] });
+
+  const advTable = container.querySelector('.ek-advtable');
+  assert.ok(advTable);
+  assert.ok(advTable.querySelector('.ek-advtable-toolbar'), 'the read-only page view should still hydrate an interactive widget');
+
+  // Editing a cell recomputes dependent formulas live, entirely in-browser —
+  // nothing here is persisted back to page storage.
+  const inputs = [...advTable.querySelectorAll('.ek-advtable-cell-input')];
+  const b1 = inputs[1];
+  b1.dispatchEvent(new window.Event('focus'));
+  b1.value = '10';
+  b1.dispatchEvent(new window.Event('blur'));
+
+  const a2 = advTable.querySelectorAll('.ek-advtable-cell-input')[2];
+  assert.equal(a2.value, '12');
+
+  teardownDom();
+});
+
+test('an advanced table is excluded from the plain-table sort/filter enhancement pass', async () => {
+  setupDom();
+  const container = document.createElement('div');
+  const page = { id: '1', title: 'Sheet', slug: 'sheet', tagIds: [] };
+  const payload = JSON.stringify({ rows: 1, cols: 1, cells: { 'A1': '1' } });
+  const provider = { getPageBody: async () => '```ek-table\n' + payload + '\n```' };
+
+  await renderPageView(container, { page, provider, tags: [] });
+
+  assert.equal(container.querySelector('.ek-table-enhanced'), null);
+  assert.equal(container.querySelector('.ek-advtable .ek-table-filter-toggle-btn'), null);
+
+  teardownDom();
+});
+
 test('the standalone HTML export stays clean of the interactive table controls', async () => {
   setupDom();
   const originalCreateElement = document.createElement.bind(document);
